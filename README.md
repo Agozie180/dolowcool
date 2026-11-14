@@ -72,6 +72,13 @@ npm run test:presage-smoke
 npm audit
 ```
 
+To verify the complete email-client handoff without opening a mail client or sending anything:
+
+```powershell
+$env:DOLOWCOOL_TEST_RECIPIENT='recipient@example.com'
+npm run test:email-handoff
+```
+
 With a key in `.env`, `npm run test:live` performs one short telemetry-off test of the real Electron camera and SmartSpectra native pipeline, then stops automatically.
 
 `npm run test:live-transport` performs a shorter acceptance check for native camera capture, SDK validation, and the in-app preview without waiting for vital-sign output.

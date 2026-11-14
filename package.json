@@ -23,6 +23,7 @@
     "start:presage": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron .",
     "test": "node --test test/lock.test.js",
     "test:smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/electron-smoke.js",
+    "test:email-handoff": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/email-handoff-smoke.js",
     "test:presage-smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=presage SMARTSPECTRA_API_KEY= electron scripts/presage-smoke.js",
     "test:live": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron scripts/live-electron-smoke.js",
     "test:live-transport": "npm run build && cross-env DOLOWCOOL_SOURCE=presage DOLOWCOOL_LIVE_TIMEOUT_MS=15000 DOLOWCOOL_EXPECT_METRICS=0 electron scripts/live-electron-smoke.js",
