@@ -1,18 +1,27 @@
 {
   "name": "dolowcool",
-  "version": "0.1.0",
-  "description": "A message composer whose Send button stays locked until your body settles down (Presage SmartSpectra challenge entry).",
+  "version": "0.2.0",
+  "description": "A privacy-conscious message composer that pauses email actions until live pulse and breathing settle toward a personal baseline.",
+  "license": "MIT",
+  "author": "Agozie180",
+  "engines": { "node": ">=20" },
+  "keywords": ["smartspectra", "electron", "digital-wellbeing", "pulse", "breathing"],
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "start:sim": "cross-env DOLOWCOOL_SOURCE=sim electron .",
-    "start:presage": "cross-env DOLOWCOOL_SOURCE=presage electron .",
-    "test": "node --test test/lock.test.js test/presage.test.js",
-    "test:smoke": "cross-env DOLOWCOOL_SOURCE=sim electron scripts/electron-smoke.js"
+    "build": "npm run build:preload && npm run build:renderer",
+    "build:preload": "esbuild preload.js --bundle --outfile=dist/preload.js --platform=node --format=cjs --external:electron --log-level=warning",
+    "build:renderer": "esbuild renderer/presage-client.js --bundle --outfile=renderer/presage-client.bundle.js --platform=browser --format=iife --log-level=warning",
+    "start": "npm run build && electron .",
+    "start:sim": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron .",
+    "start:presage": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron .",
+    "test": "node --test test/lock.test.js",
+    "test:smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/electron-smoke.js",
+    "test:presage-smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=presage SMARTSPECTRA_API_KEY= electron scripts/presage-smoke.js"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^43.8.1"
+    "electron": "^43.8.1",
+    "esbuild": "^0.25.12"
   },
   "dependencies": {
     "@smartspectra/node-sdk": "^3.5.0"

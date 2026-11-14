@@ -1,48 +1,137 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Dolowcool</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
-<style>
-  :root{--bg:#0f1720;--card:#18232f;--ink:#e8eef4;--mute:#8da0b2;--ok:#3ecf8e;--hot:#ff6b5e;--line:#2a3a4a}
-  @media (prefers-color-scheme: light){:root{--bg:#f3f6f9;--card:#fff;--ink:#14202b;--mute:#5d7184;--line:#d5dee7}}
-  *{box-sizing:border-box} body{margin:0;font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:20px}
-  h1{margin:0 0 4px;font-size:22px} .sub{color:var(--mute);margin:0 0 16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
-  button{font:inherit;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--ok);color:#06210f;font-weight:600}
-  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)} button:disabled{opacity:.4;cursor:not-allowed}
-  textarea{width:100%;height:160px;resize:vertical;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:10px;font:inherit}
-  .gauge{height:14px;border-radius:7px;background:var(--line);position:relative;overflow:hidden}
-  .fill{height:100%;width:0;background:var(--ok);transition:width .4s,background .4s}
-  .mark{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.5}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px} .hidden{display:none} .mute{color:var(--mute)}
-  .status{font-weight:600;margin-top:8px}.err{color:var(--hot)} .privacy{font-size:13px}
-</style></head><body>
-<h1>Dolowcool</h1><p class="sub">Write the angry message. Send it when your body says you’re ready.</p>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; img-src 'self' data: blob:">
+  <title>Dolowcool</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">D</span><span>Dolowcool</span></div>
+    <div class="topbar-meta">
+      <span id="sourcePill" class="pill">Simulator</span>
+      <span id="privacyPill" class="pill safe"><span class="dot"></span>Telemetry off</span>
+    </div>
+  </header>
 
-<section id="consent" class="card">
-  <strong>Before we start</strong>
-  <p class="mute">Dolowcool uses your camera to estimate pulse and breathing rate (via the Presage SmartSpectra SDK) while this window is open. It compares them to <em>your own</em> calm baseline and only decides whether Send is locked. It does not diagnose anything or judge your emotions. Dolowcool stores no video or readings, and SDK telemetry is off by default. Your API key is still used to authenticate with Presage. You can stop at any time.</p>
-  <label><input type="checkbox" id="agree"> I understand and I’m choosing to turn the camera on.</label>
-  <div class="row"><button id="start" disabled>Start</button></div>
-  <p id="startErr" class="err"></p>
-</section>
+  <main>
+    <section id="consent" class="consent-shell">
+      <div class="consent-card">
+        <p class="eyebrow">A pause you can feel</p>
+        <h1>Write now.<br><span>Send when settled.</span></h1>
+        <p class="lede">Dolowcool uses camera-estimated pulse and breathing rate to add a deliberate pause before a message leaves your hands.</p>
+        <div class="consent-points">
+          <div><span>01</span><p><strong>You choose when sensing starts.</strong><br>The camera never starts before this screen.</p></div>
+          <div><span>02</span><p><strong>No diagnosis or emotion detection.</strong><br>Readings are compared only with your own baseline.</p></div>
+          <div><span>03</span><p><strong>Privacy-first by default.</strong><br>Dolowcool stores no video or readings. SDK telemetry is off.</p></div>
+        </div>
+        <label class="consent-check"><input type="checkbox" id="agree"><span>I understand and choose to turn on camera-based sensing.</span></label>
+        <button id="start" class="primary wide" disabled>Begin a private session <span>→</span></button>
+        <p id="startErr" class="error" role="alert"></p>
+        <p class="fineprint">Wellness and reflection tool only—not a medical device. You can stop at any time.</p>
+      </div>
+      <div class="consent-art" aria-hidden="true">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="breath-orb"><span>inhale</span></div>
+        <div class="wave wave-one"></div><div class="wave wave-two"></div>
+      </div>
+    </section>
 
-<section id="app" class="hidden">
-  <div class="card">
-    <div id="status" class="status" aria-live="polite">Starting…</div>
-    <div class="gauge" style="margin-top:10px"><div id="fill" class="fill"></div><div class="mark" style="left:50%" title="lock point"></div></div>
-    <div class="mute" id="detail" style="margin-top:6px"></div>
-  </div>
-  <div class="card">
-    <textarea id="msg" placeholder="Type what you really want to say…"></textarea>
-    <div class="row"><button id="send" disabled>Send</button><button id="draft" class="ghost">Save draft &amp; sleep on it</button><button id="recalibrate" class="ghost">Recalibrate</button><button id="stop" class="ghost">Stop camera</button></div>
-    <div id="toast" class="mute" style="margin-top:8px" aria-live="polite"></div>
-  </div>
-  <div id="simBox" class="card hidden"><strong>Simulated signals</strong>
-    <div class="mute">Drag to fake how worked up you are (dev mode, no camera).</div>
-    <input id="sim" type="range" min="0" max="1" step="0.05" value="0" style="width:100%">
-  </div>
-  <p class="mute privacy">Wellness demo only—not a medical device. Send is simulated; no message leaves the app.</p>
-</section>
-<script src="lock.js"></script><script src="renderer.js"></script>
-</body></html>
+    <section id="app" class="workspace hidden">
+      <div class="signal-column">
+        <section class="panel camera-panel">
+          <div class="panel-head">
+            <div><p class="eyebrow">Live signal</p><h2>Your settling space</h2></div>
+            <span id="qualityPill" class="quality waiting"><span class="dot"></span>Waiting</span>
+          </div>
+          <div class="camera-stage">
+            <video id="preview" autoplay muted playsinline></video>
+            <div id="simVisual" class="sim-visual hidden"><div class="sim-orb"></div><p>Camera-free simulator</p></div>
+            <div class="face-guide"><span></span></div>
+            <div class="camera-shade"></div>
+            <p id="cameraHint" class="camera-hint">Keep your face and upper chest inside the guide.</p>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card">
+              <div class="metric-label"><span class="metric-icon pulse-icon">♥</span>Pulse</div>
+              <div><strong id="pulseNow">—</strong><span>bpm</span></div>
+              <p id="pulseMeta">Waiting for a reading</p>
+            </article>
+            <article class="metric-card">
+              <div class="metric-label"><span class="metric-icon breath-icon">≈</span>Breathing</div>
+              <div><strong id="breathNow">—</strong><span>br/min</span></div>
+              <p id="breathMeta">Waiting for a reading</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel state-panel">
+          <div class="state-copy">
+            <p class="eyebrow">Relative arousal</p>
+            <h2 id="status" aria-live="polite">Starting…</h2>
+            <p id="explanation">We are preparing your session.</p>
+          </div>
+          <div class="score-readout"><strong id="score">0.0</strong><span>× threshold</span></div>
+          <div class="gauge" role="meter" aria-label="Arousal relative to personal baseline" aria-valuemin="0" aria-valuemax="2">
+            <div id="fill" class="fill"></div><div class="lock-mark"><span>lock</span></div>
+          </div>
+          <div class="progress-row"><span id="progressLabel">Preparing</span><strong id="progressValue">—</strong></div>
+          <div class="progress-track"><div id="progressFill"></div></div>
+        </section>
+
+        <section id="simBox" class="panel simulator hidden">
+          <div><p class="eyebrow">Demo control</p><h3>Simulate relative arousal</h3></div>
+          <input id="sim" type="range" min="0" max="1" step="0.05" value="0" aria-label="Simulated arousal">
+          <div class="range-labels"><span>settled</span><span>worked up</span></div>
+        </section>
+      </div>
+
+      <div class="compose-column">
+        <section class="panel compose-panel">
+          <div class="panel-head">
+            <div><p class="eyebrow">Message</p><h2>Say what you need to say</h2></div>
+            <span id="draftState" class="draft-state">Not saved</span>
+          </div>
+          <div class="field-row">
+            <label>To<input id="recipient" type="email" placeholder="someone@example.com" autocomplete="off"></label>
+            <label>Subject<input id="subject" type="text" placeholder="What this is about" maxlength="200"></label>
+          </div>
+          <label class="message-field"><span class="sr-only">Message</span><textarea id="msg" maxlength="8000" placeholder="Type the version you want to get out of your head…"></textarea></label>
+          <div class="composer-meta"><span id="charCount">0 / 8000</span><span>Nothing is sent automatically</span></div>
+
+          <div id="lockBanner" class="lock-banner calibrating">
+            <div class="lock-symbol">⌁</div>
+            <div><strong id="lockTitle">Learning your baseline</strong><p id="lockText">Send unlocks after a clear, continuous baseline.</p></div>
+          </div>
+
+          <div class="actions">
+            <button id="send" class="primary" disabled><span id="sendIcon">⌁</span><span id="sendLabel">Open in email when settled</span></button>
+            <button id="copy" class="secondary" disabled>Copy message</button>
+            <button id="draft" class="secondary">Save draft</button>
+          </div>
+          <button id="override" class="text-button hidden">Need to act now? Use a deliberate override</button>
+          <button id="discard" class="text-button draft-delete">Discard local draft</button>
+          <div id="overrideConfirm" class="override-confirm hidden">
+            <p><strong>You are still in control.</strong> This bypasses the settling pause. Dolowcool will open your email app, but it will not send automatically.</p>
+            <div><button id="overrideYes" class="danger-soft">Open email anyway</button><button id="overrideNo" class="text-button">Keep the pause</button></div>
+          </div>
+          <p id="toast" class="toast" aria-live="polite"></p>
+        </section>
+
+        <section class="session-tools">
+          <button id="recalibrate" class="text-button">↻ Recalibrate</button>
+          <button id="stop" class="text-button">■ Stop camera &amp; end session</button>
+        </section>
+        <p class="privacy-note">Video is displayed only for framing and is not stored by Dolowcool. Pulse and breathing readings stay in memory for this session. <span id="telemetryNote">SDK telemetry is off.</span></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="lock.js"></script>
+  <script src="presage-client.bundle.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

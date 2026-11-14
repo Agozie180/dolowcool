@@ -1,44 +1,105 @@
 # Dolowcool
 
-A message composer whose **Send** button stays locked while your pulse or breathing is well above *your own* calm baseline, and unlocks once you've settled and stayed settled. Built for the Presage SmartSpectra SDK Challenge.
+**Write now. Send when settled.**
 
-## Run it (simulated signals, no camera, no credits)
-    npm install
-    npm run start:sim
-    npm test            # lock logic + SmartSpectra adapter tests
-    npm run test:smoke  # launches Electron and checks the main UI flow
+Dolowcool is a privacy-conscious desktop message composer whose email action pauses when camera-estimated pulse or breathing rate rises well above the user's own calm baseline. It unlocks only after a continuous settled hold—or the user can make an explicit, deliberate override.
 
-Drag the "Simulated signals" slider up to lock Send, then back down and hold steady to unlock.
+Built for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04).
 
-## Run it with the real SDK
-The SDK supports Windows x64, macOS Apple Silicon, and Linux x64/ARM64. Use Node.js 20 or newer.
+![Dolowcool showing a breathing-driven pause](docs/locked.png)
+
+## Why it is different
+
+- **The live signal controls the core interaction.** Pulse and breathing rate directly determine whether the message action is available.
+- **Personal, not population-based.** Dolowcool learns a stable baseline for each session instead of applying a universal “calm” number.
+- **Continuous means continuous.** Lost samples reset the calm hold; a signal gap can never silently unlock the action.
+- **User agency remains intact.** A clearly disclosed override is available for urgent situations, and nothing is sent automatically.
+- **Privacy is the default.** No video or physiological readings are stored, and SmartSpectra telemetry is disabled unless explicitly enabled.
+
+## Experience
+
+1. The user explicitly consents before the camera starts.
+2. A live preview and framing guide help establish a clear signal.
+3. Dolowcool learns a stable, continuous personal baseline.
+4. The user writes while pulse and breathing remain visible.
+5. A relative-arousal score uses the stronger rise of pulse or breathing rate.
+6. If the score crosses the threshold, email and copy actions pause.
+7. The actions return only after readings remain below the lower threshold for eight continuous seconds.
+8. The user reviews the message in their default email app; Dolowcool never sends automatically.
+
+## Run with simulated signals
+
+No camera, API key, or trial credits are needed.
+
+```bash
+npm install
+npm run start:sim
+```
+
+Allow the baseline to finish, then move the simulator slider toward **worked up** to activate the pause. Move it back toward **settled** and hold continuously to unlock.
+
+## Run with SmartSpectra
+
+Requirements:
+
+- Node.js 20 or newer
+- Windows x64, macOS Apple Silicon, or Linux x64/ARM64
+- A SmartSpectra API key
 
 PowerShell:
 
-    $env:SMARTSPECTRA_API_KEY='your_key'
-    npm run start:presage
+```powershell
+$env:SMARTSPECTRA_API_KEY='your_key'
+npm run start:presage
+```
 
 macOS/Linux:
 
-    SMARTSPECTRA_API_KEY=your_key npm run start:presage
+```bash
+SMARTSPECTRA_API_KEY=your_key npm run start:presage
+```
 
-The real source opens the default camera through SmartSpectra, requests breathing and cardio metrics, and forwards only the latest pulse and breathing-rate values to the lock engine. Keep API keys in environment variables and never commit them.
+The app follows Presage's official Electron integration: the renderer owns the browser camera stream and preview, while the SDK's main-process bridge handles native measurement. Breathing and cardio metric bundles are requested, then the latest breathing-rate and pulse-rate measurements feed the lock engine.
 
-## Structure
-- `renderer/lock.js`: pure baseline + lock/unlock logic (smoothing, hysteresis, calm-hold timer)
-- `sources/`: signal sources (`sim`, `presage`) behind one tiny interface
-- `main.js`: main process owns the signal source and forwards samples to the UI over IPC
+## Verification
 
-## Consent and data
-Camera capture starts only after an explicit checkbox and Start click, and Stop camera releases it. Dolowcool makes no diagnosis or treatment claim; it only compares readings with the user's own baseline.
+```bash
+npm test
+npm run test:smoke
+npm run test:presage-smoke
+npm audit
+```
 
-- Dolowcool stores no video or physiological readings. An optional message draft is stored locally in `localStorage`.
-- The Presage API key is read from `SMARTSPECTRA_API_KEY` in the main process and is not exposed to the renderer.
-- SmartSpectra telemetry is disabled by default (`enableTelemetry: false`). Set `DOLOWCOOL_TELEMETRY=1` only to opt in.
-- Presage documents that telemetry, when enabled, contains session/device/performance/quality summaries but no raw frames or measured physiological values. Authenticated requests can be associated with an account, and diagnostic reports currently have no automatic expiration.
+The tests cover:
 
-See Presage's [SDK Telemetry & Privacy](https://smartspectra.presagetech.com/docs/telemetry-and-privacy) documentation and [Privacy Policy](https://api.physiology.presagetech.com/privacypolicy).
+- stable personal-baseline calibration;
+- threshold smoothing and hysteresis;
+- continuous calm-hold unlocking;
+- prevention of false unlocks after signal loss;
+- the Electron consent, simulator, draft, and stop-session flow.
+
+## Architecture
+
+- `renderer/presage-client.js` — official SmartSpectra renderer integration, camera preview, validation feedback, and metric decoding.
+- `renderer/lock.js` — pure, tested baseline and state engine.
+- `renderer/renderer.js` — experience state, explanations, draft handling, email handoff, and deliberate override.
+- `sources/sim.js` — camera-free signal simulator.
+- `main.js` — window security, SDK bridge, permission boundary, simulator IPC, and safe `mailto:` handoff.
+
+## Consent and data handling
+
+- Camera access starts only after an unchecked consent box is selected and **Begin a private session** is clicked.
+- **Stop camera & end session** releases the camera and discards in-memory readings.
+- Dolowcool stores no video and no physiological readings.
+- Optional message drafts are stored only in local `localStorage` and can be deleted with **Discard local draft**.
+- The API key is loaded from `SMARTSPECTRA_API_KEY`, passed through the context-isolated local Electron renderer to the official SmartSpectra bridge, and is never written to app storage.
+- SmartSpectra telemetry is disabled by default with `enableTelemetry: false`. Set `DOLOWCOOL_TELEMETRY=1` to opt in.
+- Presage states that enabled telemetry contains device, session, performance, and quality summaries, but not raw frames or physiological values. Authenticated requests may be associated with an account, and diagnostic reports currently have no automatic expiration.
+- Dolowcool uses no optional AI service.
+- This is a wellness and reflection tool, not a medical device. It does not diagnose emotions, conditions, or health states.
+
+See [SmartSpectra SDK Telemetry & Privacy](https://smartspectra.presagetech.com/docs/telemetry-and-privacy) and the [Presage Privacy Policy](https://api.physiology.presagetech.com/privacypolicy).
 
 ## License
 
-Dolowcool is available under the [MIT License](LICENSE).
+MIT — see [LICENSE](LICENSE).

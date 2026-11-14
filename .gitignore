@@ -1,4 +1,5 @@
 node_modules/
+renderer/presage-client.bundle.js
 dist/
 out/
 .env
