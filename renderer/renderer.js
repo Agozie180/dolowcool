@@ -9,7 +9,6 @@ let timedOut = false;
 let lastSampleAt = 0;
 let currentSample = null;
 let currentSnapshot = null;
-let presageClient = null;
 
 const numberText = (value, digits = 0) => Number.isFinite(value) ? Number(value).toFixed(digits) : '—';
 const percentAbove = (value, baseline) => Number.isFinite(value) && Number.isFinite(baseline)
@@ -118,6 +117,18 @@ function handleStatus(event) {
   if (event.kind === 'lifecycle') {
     document.body.dataset.sdkProcessingStatus = String(event.status);
   }
+  if (event.kind === 'stream') {
+    document.body.dataset.sdkStreamAvailable = String(Boolean(event.available));
+    return;
+  }
+  if (event.kind === 'metrics') {
+    document.body.dataset.sdkMetricsPacketCount = String(
+      Number(document.body.dataset.sdkMetricsPacketCount || 0) + 1,
+    );
+    if (event.pulsePresent) document.body.dataset.sdkMetricsPulsePresent = 'true';
+    if (event.breathPresent) document.body.dataset.sdkMetricsBreathPresent = 'true';
+    return;
+  }
   if (event.kind === 'quality') {
     document.body.dataset.sdkValidationCode = String(event.code);
     document.body.dataset.sdkValidationMessage = String(event.message || '');
@@ -155,18 +166,99 @@ function handleSample(sample) {
   renderSnapshot(snapshot);
 }
 
-function handleError(message, details = {}) {
-  document.body.dataset.sdkErrorCode = String(details.code ?? 'unknown');
+function handleError(raw, details = {}) {
+  const message = typeof raw === 'object' && raw ? raw.message : raw;
+  const metadata = typeof raw === 'object' && raw ? raw : details;
+  document.body.dataset.sdkErrorCode = String(metadata.code ?? 'unknown');
   document.body.dataset.sdkErrorMessage = String(message || 'Unknown SmartSpectra error.');
-  document.body.dataset.sdkErrorRetryable = String(Boolean(details.retryable));
+  document.body.dataset.sdkErrorRetryable = String(Boolean(metadata.retryable));
   qualityOk = false;
   showSignalProblem(`SmartSpectra: ${message}`);
 }
 
-function attachPreview(stream) {
+const clampByte = (value) => Math.max(0, Math.min(255, Math.round(value)));
+const writeYuvPixel = (out, offset, y, u, v) => {
+  const c = y - 16;
+  const d = u - 128;
+  const e = v - 128;
+  out[offset] = clampByte((298 * c + 409 * e + 128) / 256);
+  out[offset + 1] = clampByte((298 * c - 100 * d - 208 * e + 128) / 256);
+  out[offset + 2] = clampByte((298 * c + 516 * d + 128) / 256);
+  out[offset + 3] = 255;
+};
+
+function frameToRgba(frame) {
+  const width = Number(frame.width);
+  const height = Number(frame.height);
+  const stride = Number(frame.stride);
+  const format = Number(frame.pixelFormat);
+  const bytes = frame.buffer instanceof Uint8Array
+    ? frame.buffer
+    : new Uint8Array(frame.buffer?.data || frame.buffer || 0);
+  if (!width || !height || !stride || !bytes.length) throw new Error('Camera preview frame is malformed.');
+
+  const out = new Uint8ClampedArray(width * height * 4);
+  if (format <= 3) {
+    const channels = format < 2 ? 3 : 4;
+    const bgr = format === 1 || format === 3;
+    for (let y = 0; y < height; y += 1) {
+      let src = y * stride;
+      let dst = y * width * 4;
+      for (let x = 0; x < width; x += 1, src += channels, dst += 4) {
+        out[dst] = bytes[src + (bgr ? 2 : 0)];
+        out[dst + 1] = bytes[src + 1];
+        out[dst + 2] = bytes[src + (bgr ? 0 : 2)];
+        out[dst + 3] = channels === 4 ? bytes[src + 3] : 255;
+      }
+    }
+    return { width, height, pixels: out };
+  }
+  if (format === 6) {
+    for (let y = 0; y < height; y += 1) {
+      const row = y * stride;
+      for (let x = 0; x < width; x += 2) {
+        const src = row + x * 2;
+        const dst = (y * width + x) * 4;
+        writeYuvPixel(out, dst, bytes[src], bytes[src + 1], bytes[src + 3]);
+        if (x + 1 < width) writeYuvPixel(out, dst + 4, bytes[src + 2], bytes[src + 1], bytes[src + 3]);
+      }
+    }
+    return { width, height, pixels: out };
+  }
+  if (format === 4 || format === 5) {
+    const uvBase = stride * height;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const uv = uvBase + Math.floor(y / 2) * stride + Math.floor(x / 2) * 2;
+        const u = bytes[uv + (format === 4 ? 0 : 1)];
+        const v = bytes[uv + (format === 4 ? 1 : 0)];
+        writeYuvPixel(out, (y * width + x) * 4, bytes[y * stride + x], u, v);
+      }
+    }
+    return { width, height, pixels: out };
+  }
+  throw new Error(`Unsupported camera preview pixel format ${format}.`);
+}
+
+function drawCameraFrame(frame) {
+  const canvas = $('preview');
+  try {
+    const image = frameToRgba(frame);
+    if (canvas.width !== image.width || canvas.height !== image.height) {
+      canvas.width = image.width;
+      canvas.height = image.height;
+    }
+    canvas.getContext('2d', { alpha: false }).putImageData(
+      new ImageData(image.pixels, image.width, image.height),
+      0,
+      0,
+    );
+  } catch (error) {
+    document.body.dataset.previewError = String(error.message || error);
+    return;
+  }
   document.body.dataset.sdkStreamAvailable = 'true';
-  $('preview').srcObject = stream;
-  $('preview').play().catch(() => {});
+  document.body.dataset.previewFrameReceived = 'true';
 }
 
 function resetVisualState() {
@@ -183,6 +275,8 @@ function resetVisualState() {
   delete document.body.dataset.sdkMetricsPacketCount;
   delete document.body.dataset.sdkMetricsPulsePresent;
   delete document.body.dataset.sdkMetricsBreathPresent;
+  delete document.body.dataset.previewFrameReceived;
+  delete document.body.dataset.previewError;
   qualityOk = false; timedOut = false; lastSampleAt = 0; currentSample = null; currentSnapshot = null;
   engine.reset();
   $('pulseNow').textContent = '—'; $('breathNow').textContent = '—';
@@ -190,6 +284,8 @@ function resetVisualState() {
   $('score').textContent = '0.0'; $('fill').style.width = '0%'; $('progressFill').style.width = '0%';
   $('overrideConfirm').classList.add('hidden');
   setQuality('waiting', 'Waiting');
+  const preview = $('preview');
+  preview.getContext('2d')?.clearRect(0, 0, preview.width, preview.height);
   renderSnapshot(engine.snapshot(Date.now()));
 }
 
@@ -220,29 +316,14 @@ $('start').onclick = async () => {
       $('simBox').classList.add('hidden');
       $('simVisual').classList.add('hidden');
       q('.face-guide')?.classList.remove('hidden');
-      const options = await window.dolowcool.presageConfig();
-      presageClient = window.DolowcoolPresage.createClient({
-        onSample: handleSample,
-        onStatus: handleStatus,
-        onError: handleError,
-        onStream: attachPreview,
-        onMetricsPacket: (packet) => {
-          document.body.dataset.sdkMetricsPacketCount = String(
-            Number(document.body.dataset.sdkMetricsPacketCount || 0) + 1,
-          );
-          if (packet.pulsePresent) document.body.dataset.sdkMetricsPulsePresent = 'true';
-          if (packet.breathPresent) document.body.dataset.sdkMetricsBreathPresent = 'true';
-        },
-      });
-      await presageClient.start(options);
+      await window.dolowcool.start();
     }
   } catch (error) {
     document.body.dataset.sdkErrorCode = String(error?.code ?? 'start-rejected');
     document.body.dataset.sdkErrorMessage = String(error?.message || error);
     document.body.dataset.sdkErrorRetryable = String(Boolean(error?.retryable));
     active = false;
-    try { await presageClient?.stop(); } catch {}
-    presageClient = null;
+    try { await window.dolowcool.stop(); } catch {}
     $('app').classList.add('hidden');
     $('consent').classList.remove('hidden');
     $('startErr').textContent = String(error.message || error).replace(/^Error invoking remote method.*?Error: /, '');
@@ -253,11 +334,8 @@ $('start').onclick = async () => {
 $('stop').onclick = async () => {
   active = false;
   try {
-    if (sourceName === 'presage') await presageClient?.stop();
-    else await window.dolowcool.stop();
+    await window.dolowcool.stop();
   } finally {
-    presageClient = null;
-    $('preview').srcObject = null;
     $('app').classList.add('hidden');
     $('consent').classList.remove('hidden');
     $('simBox').classList.add('hidden');
@@ -279,6 +357,7 @@ $('sim').oninput = (event) => window.dolowcool.simSet(Number(event.target.value)
 window.dolowcool.onSample(handleSample);
 window.dolowcool.onStatus(handleStatus);
 window.dolowcool.onError(handleError);
+window.dolowcool.onFrame(drawCameraFrame);
 
 function draftPayload() {
   return { to: $('recipient').value.trim(), subject: $('subject').value.trim(), body: $('msg').value };

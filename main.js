@@ -1,5 +1,5 @@
 // Main process owns the signal source (the SDK loop stays out of the UI process).
-const { app, BrowserWindow, ipcMain, session, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -9,13 +9,6 @@ let win = null;
 let source = null;
 
 function createWindow() {
-  if (sourceName === 'presage') {
-    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
-      const url = details?.requestingUrl || webContents?.getURL() || '';
-      callback(permission === 'media' && url.startsWith('file://'));
-    });
-  }
-
   win = new BrowserWindow({
     width: 1180, height: 820, minWidth: 900, minHeight: 680,
     title: 'Dolowcool',
@@ -28,10 +21,6 @@ function createWindow() {
     },
   });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  if (sourceName === 'presage') {
-    const { bindSmartSpectraIpc } = require('@smartspectra/node-sdk/main');
-    bindSmartSpectraIpc(win);
-  }
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
@@ -41,21 +30,20 @@ ipcMain.handle('config', () => ({
   hasApiKey: Boolean(process.env.SMARTSPECTRA_API_KEY),
 }));
 
-ipcMain.handle('presage:config', () => {
-  if (!process.env.SMARTSPECTRA_API_KEY) throw new Error('Set SMARTSPECTRA_API_KEY first.');
-  return {
+ipcMain.handle('capture:start', async () => {
+  if (source) return;
+  const s = require(path.join(__dirname, 'sources', sourceName))({
     apiKey: process.env.SMARTSPECTRA_API_KEY,
     enableTelemetry: process.env.DOLOWCOOL_TELEMETRY === '1',
-  };
-});
-
-ipcMain.handle('capture:start', async () => {
-  if (sourceName !== 'sim') return;
-  if (source) return;
-  const s = require(path.join(__dirname, 'sources', sourceName))();
+  });
   s.on('sample', (x) => win && win.webContents.send('sample', x));
   s.on('status', (x) => win && win.webContents.send('source-status', x));
-  s.on('error', (e) => win && win.webContents.send('source-error', String((e && e.message) || e)));
+  s.on('frame', (x) => win && win.webContents.send('camera-frame', x));
+  s.on('error', (e) => win && win.webContents.send('source-error', {
+    message: String((e && e.message) || e),
+    code: e?.code ?? 'unknown',
+    retryable: Boolean(e?.retryable),
+  }));
   source = s;
   try { await s.start(); }
   catch (e) {

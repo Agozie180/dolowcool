@@ -47,11 +47,11 @@
             <span id="qualityPill" class="quality waiting"><span class="dot"></span>Waiting</span>
           </div>
           <div class="camera-stage">
-            <video id="preview" autoplay muted playsinline></video>
+            <canvas id="preview" aria-label="Live camera preview"></canvas>
             <div id="simVisual" class="sim-visual hidden"><div class="sim-orb"></div><p>Camera-free simulator</p></div>
             <div class="face-guide"><span></span></div>
             <div class="camera-shade"></div>
-            <p id="cameraHint" class="camera-hint">Keep your face and upper chest inside the guide.</p>
+            <p id="cameraHint" class="camera-hint">Step back until your head, shoulders, and upper chest fit inside the guide.</p>
           </div>
 
           <div class="metric-grid">
@@ -131,7 +131,6 @@
   </main>
 
   <script src="lock.js"></script>
-  <script src="presage-client.bundle.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

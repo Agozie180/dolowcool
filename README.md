@@ -61,7 +61,7 @@ macOS/Linux:
 SMARTSPECTRA_API_KEY=your_key npm run start:presage
 ```
 
-The app follows Presage's official Electron integration: the renderer owns the browser camera stream and preview, while the SDK's main-process bridge handles native measurement. Only `BREATHING_RATE` and `PULSE_RATE` are requested, avoiding unrelated models and trial usage, and the latest measurements feed the lock engine.
+The app uses SmartSpectra's native Node camera path in Electron's main process at 1280×720/30 fps. This avoids copying every raw camera frame from the renderer to the main process, which could not sustain SmartSpectra's required frame rate on the test machine. A throttled, memory-only processed preview is sent to the renderer for framing; frames are never written to disk. Only `BREATHING_RATE` and `PULSE_RATE` are requested, avoiding unrelated models and trial usage, and the latest measurements feed the lock engine. The API key stays in the main process and is never exposed to the renderer.
 
 ## Verification
 
@@ -72,7 +72,9 @@ npm run test:presage-smoke
 npm audit
 ```
 
-With a key in `.env`, `npm run test:live` performs one short telemetry-off test of the real Electron camera and SmartSpectra bridge, then stops automatically.
+With a key in `.env`, `npm run test:live` performs one short telemetry-off test of the real Electron camera and SmartSpectra native pipeline, then stops automatically.
+
+`npm run test:live-transport` performs a shorter acceptance check for native camera capture, SDK validation, and the in-app preview without waiting for vital-sign output.
 
 For a valid pulse-and-breathing run, sit far enough from the camera for both your face and upper chest to be visible with soft front lighting. The test records only pass/fail booleans and SDK status codes; it does not save frames, API keys, or physiological values. See [LIVE_TEST_REPORT.md](LIVE_TEST_REPORT.md) for the latest redacted hardware run.
 
@@ -86,11 +88,11 @@ The tests cover:
 
 ## Architecture
 
-- `renderer/presage-client.js` — official SmartSpectra renderer integration, camera preview, validation feedback, and metric decoding.
 - `renderer/lock.js` — pure, tested baseline and state engine.
-- `renderer/renderer.js` — experience state, explanations, draft handling, email handoff, and deliberate override.
+- `renderer/renderer.js` — memory-only camera preview, experience state, explanations, draft handling, email handoff, and deliberate override.
+- `sources/presage.js` — native SmartSpectra camera capture, validation feedback, and metric decoding.
 - `sources/sim.js` — camera-free signal simulator.
-- `main.js` — window security, SDK bridge, permission boundary, simulator IPC, and safe `mailto:` handoff.
+- `main.js` — window security, source lifecycle, narrow renderer IPC, and safe `mailto:` handoff.
 
 ## Consent and data handling
 
@@ -98,7 +100,7 @@ The tests cover:
 - **Stop camera & end session** releases the camera and discards in-memory readings.
 - Dolowcool stores no video and no physiological readings.
 - Optional message drafts are stored only in local `localStorage` and can be deleted with **Discard local draft**.
-- The API key is loaded from `SMARTSPECTRA_API_KEY`, passed through the context-isolated local Electron renderer to the official SmartSpectra bridge, and is never written to app storage.
+- The API key is loaded from `SMARTSPECTRA_API_KEY` only in Electron's main process. It is never exposed to the renderer or written to app storage.
 - SmartSpectra telemetry is disabled by default with `enableTelemetry: false`. Set `DOLOWCOOL_TELEMETRY=1` to opt in.
 - Presage states that enabled telemetry contains device, session, performance, and quality summaries, but not raw frames or physiological values. Authenticated requests may be associated with an account, and diagnostic reports currently have no automatic expiration.
 - Dolowcool uses no optional AI service.

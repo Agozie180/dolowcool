@@ -16,16 +16,17 @@
   ],
   "main": "main.js",
   "scripts": {
-    "build": "npm run build:preload && npm run build:renderer",
+    "build": "npm run build:preload",
     "build:preload": "esbuild preload.js --bundle --outfile=dist/preload.js --platform=node --format=cjs --external:electron --log-level=warning",
-    "build:renderer": "esbuild renderer/presage-client.js --bundle --outfile=renderer/presage-client.bundle.js --platform=browser --format=iife --log-level=warning",
     "start": "npm run build && electron .",
     "start:sim": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron .",
     "start:presage": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron .",
     "test": "node --test test/lock.test.js",
     "test:smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/electron-smoke.js",
     "test:presage-smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=presage SMARTSPECTRA_API_KEY= electron scripts/presage-smoke.js",
-    "test:live": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron scripts/live-electron-smoke.js"
+    "test:live": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron scripts/live-electron-smoke.js",
+    "test:live-transport": "npm run build && cross-env DOLOWCOOL_SOURCE=presage DOLOWCOOL_LIVE_TIMEOUT_MS=15000 DOLOWCOOL_EXPECT_METRICS=0 electron scripts/live-electron-smoke.js",
+    "test:native-live": "node scripts/native-live-smoke.js"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

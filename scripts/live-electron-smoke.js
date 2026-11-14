@@ -3,8 +3,10 @@ const { app } = require('electron');
 const main = require('../main');
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const liveTimeoutMs = Number(process.env.DOLOWCOOL_LIVE_TIMEOUT_MS || 45000);
+const expectMetrics = process.env.DOLOWCOOL_EXPECT_METRICS !== '0';
 
-async function waitFor(check, message, timeoutMs = 45000) {
+async function waitFor(check, message, timeoutMs = liveTimeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const result = await check();
@@ -42,6 +44,7 @@ app.whenReady().then(async () => {
     let result;
     try {
       result = await waitFor(async () => win.webContents.executeJavaScript(`(() => {
+      const expectMetrics = ${expectMetrics};
       const error = document.getElementById('startErr').textContent.trim();
       if (error) return { kind: 'error', message: error };
       const sdkError = document.body.dataset.sdkErrorMessage;
@@ -55,9 +58,14 @@ app.whenReady().then(async () => {
       };
       const status = document.getElementById('status').textContent.trim();
       const quality = document.getElementById('qualityPill').textContent.trim();
-      const hasStream = Boolean(document.getElementById('preview').srcObject);
+      const hasStream = document.body.dataset.sdkStreamAvailable === 'true'
+        && document.body.dataset.previewFrameReceived === 'true';
       const pulseReceived = document.body.dataset.sdkPulseReceived === 'true';
       const breathReceived = document.body.dataset.sdkBreathReceived === 'true';
+      const validationReceived = Number(document.body.dataset.sdkValidationCount || 0) > 0;
+      if (!expectMetrics && hasStream && validationReceived) {
+        return { kind: 'transport', status, quality, hasStream, pulseReceived, breathReceived };
+      }
       if (hasStream && pulseReceived && breathReceived) {
         return { kind: 'metrics', status, quality, hasStream, pulseReceived, breathReceived };
       }
@@ -70,7 +78,7 @@ app.whenReady().then(async () => {
 
     assert.equal(
       result.kind,
-      'metrics',
+      expectMetrics ? 'metrics' : 'transport',
       result.kind === 'error'
         ? `SDK_ERROR_CODE=${result.code || 'unknown'} PROCESSING_STATUS=${result.processingStatus || 'unknown'} STREAM=${Boolean(result.hasStream)} RETRYABLE=${Boolean(result.retryable)} MESSAGE=${result.message}`
         : 'Live source failed.',
@@ -79,7 +87,7 @@ app.whenReady().then(async () => {
     await waitFor(async () => win.webContents.executeJavaScript(
       `!document.getElementById('consent').classList.contains('hidden')`
     ), 'Live session did not stop cleanly.');
-    console.log(`RESULT=PASSED STREAM=${result.hasStream} PULSE_RECEIVED=${result.pulseReceived} BREATH_RECEIVED=${result.breathReceived} QUALITY=${result.quality}`);
+    console.log(`RESULT=PASSED MODE=${expectMetrics ? 'metrics' : 'transport'} STREAM=${result.hasStream} PULSE_RECEIVED=${result.pulseReceived} BREATH_RECEIVED=${result.breathReceived} QUALITY=${result.quality}`);
     await wait(1000);
     app.quit();
   } catch (error) {

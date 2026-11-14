@@ -16,7 +16,7 @@ Setup and simulator instructions are included in the repository README.
 
 # How It Responds to Human Signals
 
-Dolowcool requests only SmartSpectra's `BREATHING_RATE` and `PULSE_RATE` metrics and reads their latest measurements. The first stable, continuous window becomes the user's baseline.
+Dolowcool captures the camera through SmartSpectra's native Node path at 720p/30 fps, keeping raw-frame transport out of Electron IPC. It requests only SmartSpectra's `BREATHING_RATE` and `PULSE_RATE` metrics and reads their latest measurements. The first stable, continuous window becomes the user's baseline.
 
 For every later sample, the app calculates:
 
