@@ -36,9 +36,17 @@ app.whenReady().then(async () => {
     const initial = await win.webContents.executeJavaScript(`({
       title: document.title,
       consentVisible: !document.getElementById('consent').classList.contains('hidden'),
-      startDisabled: document.getElementById('start').disabled
+      startDisabled: document.getElementById('start').disabled,
+      announcerLive: document.getElementById('announcer').getAttribute('aria-live'),
+      statusLive: document.getElementById('status').getAttribute('aria-live')
     })`);
-    assert.deepEqual(initial, { title: 'Dolowcool', consentVisible: true, startDisabled: true });
+    assert.deepEqual(initial, {
+      title: 'Dolowcool',
+      consentVisible: true,
+      startDisabled: true,
+      announcerLive: 'assertive',
+      statusLive: null,
+    });
     await capture(win, 'consent');
 
     await win.webContents.executeJavaScript(`
@@ -62,7 +70,8 @@ app.whenReady().then(async () => {
 
     await waitFor(async () => win.webContents.executeJavaScript(
       `document.getElementById('status').textContent.includes('Learning your calm baseline') &&
-       document.getElementById('pulseNow').textContent !== '—'`
+       document.getElementById('pulseNow').textContent !== '—' &&
+       document.getElementById('announcer').textContent.includes('Learning your personal baseline')`
     ), 'Simulator readings did not reach the renderer.');
     await capture(win, 'workspace');
 

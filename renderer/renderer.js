@@ -13,6 +13,7 @@ let currentSample = null;
 let currentSnapshot = null;
 let cancelDemoScenario = null;
 let overrideHoldTimer = null;
+let lastAnnouncedState = null;
 
 const numberText = (value, digits = 0) => Number.isFinite(value) ? Number(value).toFixed(digits) : '—';
 const percentAbove = (value, baseline) => Number.isFinite(value) && Number.isFinite(baseline)
@@ -157,6 +158,14 @@ function renderSnapshot(snapshot) {
     $('sendLabel').textContent = 'Paused until settled';
     $('sendIcon').textContent = '⌁';
   }
+  if (active && snapshot.state !== lastAnnouncedState) {
+    if (snapshot.state === 'locked') $('announcer').textContent = 'Message actions paused. Wait for the continuous settled hold or use the deliberate override.';
+    else if (snapshot.state === 'unlocked') $('announcer').textContent = lastAnnouncedState === 'locked'
+      ? 'Settled hold complete. Message actions unlocked.'
+      : 'Personal baseline ready. Message actions unlocked.';
+    else $('announcer').textContent = 'Learning your personal baseline. Message actions remain unavailable.';
+    lastAnnouncedState = snapshot.state;
+  }
   updateActionAvailability();
 }
 
@@ -166,6 +175,7 @@ function showSignalProblem(message) {
   $('status').textContent = 'Signal needs attention';
   $('explanation').textContent = message;
   $('cameraHint').textContent = message;
+  $('announcer').textContent = `Signal needs attention. ${message}`;
   updateActionAvailability();
 }
 
@@ -393,6 +403,7 @@ function resetVisualState() {
   delete document.body.dataset.previewFrameReceived;
   delete document.body.dataset.previewError;
   qualityOk = false; timedOut = false; lastSampleAt = 0; currentSample = null; currentSnapshot = null;
+  lastAnnouncedState = null;
   engine.reset();
   $('pulseNow').textContent = '—'; $('breathNow').textContent = '—';
   $('pulseMeta').textContent = 'Waiting for a reading'; $('breathMeta').textContent = 'Waiting for a reading';
