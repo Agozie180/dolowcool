@@ -11,7 +11,7 @@
   <header class="topbar">
     <div class="brand"><span class="brand-mark">D</span><span>Dolowcool</span></div>
     <div class="topbar-meta">
-      <span id="sourcePill" class="pill">Simulator</span>
+      <span id="sourcePill" class="pill">Simulator · Simulated</span>
       <span id="privacyPill" class="pill safe"><span class="dot"></span>Telemetry off</span>
     </div>
   </header>
@@ -83,9 +83,11 @@
         </section>
 
         <section id="simBox" class="panel simulator hidden">
-          <div><p class="eyebrow">Demo control</p><h3>Simulate relative arousal</h3></div>
+          <div><p class="eyebrow">Demo control · Simulated</p><h3>Simulate relative arousal</h3></div>
           <input id="sim" type="range" min="0" max="1" step="0.05" value="0" aria-label="Simulated arousal">
           <div class="range-labels"><span>settled</span><span>worked up</span></div>
+          <button id="runDemo" class="secondary demo-run">Run demo scenario · about 60 seconds</button>
+          <p id="demoStage" class="demo-stage" aria-live="polite">Simulated controls only. No camera or SmartSpectra API key is used.</p>
         </section>
       </div>
 
@@ -131,6 +133,7 @@
   </main>
 
   <script src="lock.js"></script>
+  <script src="demo-scenario.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

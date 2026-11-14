@@ -21,7 +21,7 @@
     "start": "npm run build && electron .",
     "start:sim": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron .",
     "start:presage": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron .",
-    "test": "node --test test/lock.test.js",
+    "test": "node --test test/*.test.js",
     "test:smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/electron-smoke.js",
     "test:email-handoff": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/email-handoff-smoke.js",
     "test:presage-smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=presage SMARTSPECTRA_API_KEY= electron scripts/presage-smoke.js",

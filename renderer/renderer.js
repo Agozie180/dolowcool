@@ -9,6 +9,7 @@ let timedOut = false;
 let lastSampleAt = 0;
 let currentSample = null;
 let currentSnapshot = null;
+let cancelDemoScenario = null;
 
 const numberText = (value, digits = 0) => Number.isFinite(value) ? Number(value).toFixed(digits) : '—';
 const percentAbove = (value, baseline) => Number.isFinite(value) && Number.isFinite(baseline)
@@ -299,7 +300,7 @@ $('start').onclick = async () => {
     const config = await window.dolowcool.config();
     sourceName = config.source;
     active = true;
-    $('sourcePill').textContent = sourceName === 'sim' ? 'Simulator' : 'Live SmartSpectra';
+    $('sourcePill').textContent = sourceName === 'sim' ? 'Simulator · Simulated' : 'Live SmartSpectra';
     $('privacyPill').innerHTML = `<span class="dot"></span>${config.telemetry ? 'Telemetry on' : 'Telemetry off'}`;
     $('privacyPill').className = config.telemetry ? 'pill' : 'pill safe';
     $('telemetryNote').textContent = config.telemetry ? 'SDK telemetry is on for this session.' : 'SDK telemetry is off.';
@@ -333,6 +334,11 @@ $('start').onclick = async () => {
 
 $('stop').onclick = async () => {
   active = false;
+  cancelDemoScenario?.();
+  cancelDemoScenario = null;
+  $('runDemo').disabled = false;
+  $('runDemo').textContent = 'Run demo scenario · about 60 seconds';
+  $('demoStage').textContent = 'Simulated controls only. No camera or SmartSpectra API key is used.';
   try {
     await window.dolowcool.stop();
   } finally {
@@ -354,6 +360,23 @@ $('recalibrate').onclick = () => {
 };
 
 $('sim').oninput = (event) => window.dolowcool.simSet(Number(event.target.value));
+$('runDemo').onclick = () => {
+  cancelDemoScenario?.();
+  $('runDemo').disabled = true;
+  $('runDemo').textContent = 'Demo scenario running…';
+  cancelDemoScenario = DolowcoolDemo.run({
+    setLevel(level) {
+      $('sim').value = String(level);
+      window.dolowcool.simSet(level);
+    },
+    onStep(step) { $('demoStage').textContent = `Simulated · ${step.label}`; },
+    onDone() {
+      $('runDemo').disabled = false;
+      $('runDemo').textContent = 'Run demo scenario · about 60 seconds';
+      cancelDemoScenario = null;
+    },
+  });
+};
 window.dolowcool.onSample(handleSample);
 window.dolowcool.onStatus(handleStatus);
 window.dolowcool.onError(handleError);
