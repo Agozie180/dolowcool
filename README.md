@@ -53,13 +53,15 @@ $env:SMARTSPECTRA_API_KEY='your_key'
 npm run start:presage
 ```
 
+Alternatively, copy `.env.example` to `.env`, paste the key after `SMARTSPECTRA_API_KEY=`, and run `npm run start:presage`. The `.env` file is ignored by Git.
+
 macOS/Linux:
 
 ```bash
 SMARTSPECTRA_API_KEY=your_key npm run start:presage
 ```
 
-The app follows Presage's official Electron integration: the renderer owns the browser camera stream and preview, while the SDK's main-process bridge handles native measurement. Breathing and cardio metric bundles are requested, then the latest breathing-rate and pulse-rate measurements feed the lock engine.
+The app follows Presage's official Electron integration: the renderer owns the browser camera stream and preview, while the SDK's main-process bridge handles native measurement. Only `BREATHING_RATE` and `PULSE_RATE` are requested, avoiding unrelated models and trial usage, and the latest measurements feed the lock engine.
 
 ## Verification
 
@@ -69,6 +71,10 @@ npm run test:smoke
 npm run test:presage-smoke
 npm audit
 ```
+
+With a key in `.env`, `npm run test:live` performs one short telemetry-off test of the real Electron camera and SmartSpectra bridge, then stops automatically.
+
+For a valid pulse-and-breathing run, sit far enough from the camera for both your face and upper chest to be visible with soft front lighting. The test records only pass/fail booleans and SDK status codes; it does not save frames, API keys, or physiological values. See [LIVE_TEST_REPORT.md](LIVE_TEST_REPORT.md) for the latest redacted hardware run.
 
 The tests cover:
 

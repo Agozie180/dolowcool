@@ -115,7 +115,15 @@ function showSignalProblem(message) {
 }
 
 function handleStatus(event) {
+  if (event.kind === 'lifecycle') {
+    document.body.dataset.sdkProcessingStatus = String(event.status);
+  }
   if (event.kind === 'quality') {
+    document.body.dataset.sdkValidationCode = String(event.code);
+    document.body.dataset.sdkValidationMessage = String(event.message || '');
+    document.body.dataset.sdkValidationCount = String(
+      Number(document.body.dataset.sdkValidationCount || 0) + 1,
+    );
     qualityOk = Boolean(event.ok);
     timedOut = true;
     if (qualityOk) {
@@ -135,6 +143,8 @@ function handleStatus(event) {
 }
 
 function handleSample(sample) {
+  if (Number.isFinite(sample?.pulse)) document.body.dataset.sdkPulseReceived = 'true';
+  if (Number.isFinite(sample?.breath)) document.body.dataset.sdkBreathReceived = 'true';
   lastSampleAt = Date.now();
   timedOut = false;
   currentSample = sample;
@@ -145,17 +155,34 @@ function handleSample(sample) {
   renderSnapshot(snapshot);
 }
 
-function handleError(message) {
+function handleError(message, details = {}) {
+  document.body.dataset.sdkErrorCode = String(details.code ?? 'unknown');
+  document.body.dataset.sdkErrorMessage = String(message || 'Unknown SmartSpectra error.');
+  document.body.dataset.sdkErrorRetryable = String(Boolean(details.retryable));
   qualityOk = false;
   showSignalProblem(`SmartSpectra: ${message}`);
 }
 
 function attachPreview(stream) {
+  document.body.dataset.sdkStreamAvailable = 'true';
   $('preview').srcObject = stream;
   $('preview').play().catch(() => {});
 }
 
 function resetVisualState() {
+  delete document.body.dataset.sdkErrorCode;
+  delete document.body.dataset.sdkErrorMessage;
+  delete document.body.dataset.sdkErrorRetryable;
+  delete document.body.dataset.sdkProcessingStatus;
+  delete document.body.dataset.sdkStreamAvailable;
+  delete document.body.dataset.sdkPulseReceived;
+  delete document.body.dataset.sdkBreathReceived;
+  delete document.body.dataset.sdkValidationCode;
+  delete document.body.dataset.sdkValidationMessage;
+  delete document.body.dataset.sdkValidationCount;
+  delete document.body.dataset.sdkMetricsPacketCount;
+  delete document.body.dataset.sdkMetricsPulsePresent;
+  delete document.body.dataset.sdkMetricsBreathPresent;
   qualityOk = false; timedOut = false; lastSampleAt = 0; currentSample = null; currentSnapshot = null;
   engine.reset();
   $('pulseNow').textContent = '—'; $('breathNow').textContent = '—';
@@ -199,10 +226,20 @@ $('start').onclick = async () => {
         onStatus: handleStatus,
         onError: handleError,
         onStream: attachPreview,
+        onMetricsPacket: (packet) => {
+          document.body.dataset.sdkMetricsPacketCount = String(
+            Number(document.body.dataset.sdkMetricsPacketCount || 0) + 1,
+          );
+          if (packet.pulsePresent) document.body.dataset.sdkMetricsPulsePresent = 'true';
+          if (packet.breathPresent) document.body.dataset.sdkMetricsBreathPresent = 'true';
+        },
       });
       await presageClient.start(options);
     }
   } catch (error) {
+    document.body.dataset.sdkErrorCode = String(error?.code ?? 'start-rejected');
+    document.body.dataset.sdkErrorMessage = String(error?.message || error);
+    document.body.dataset.sdkErrorRetryable = String(Boolean(error?.retryable));
     active = false;
     try { await presageClient?.stop(); } catch {}
     presageClient = null;

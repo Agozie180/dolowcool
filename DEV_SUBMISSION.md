@@ -16,7 +16,7 @@ Setup and simulator instructions are included in the repository README.
 
 # How It Responds to Human Signals
 
-Dolowcool requests SmartSpectra's breathing and cardio metric bundles and reads the latest breathing-rate and pulse-rate measurements. The first stable, continuous window becomes the user's baseline.
+Dolowcool requests only SmartSpectra's `BREATHING_RATE` and `PULSE_RATE` metrics and reads their latest measurements. The first stable, continuous window becomes the user's baseline.
 
 For every later sample, the app calculates:
 

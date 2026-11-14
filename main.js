@@ -1,6 +1,7 @@
 // Main process owns the signal source (the SDK loop stays out of the UI process).
 const { app, BrowserWindow, ipcMain, session, shell } = require('electron');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const requestedSource = process.env.DOLOWCOOL_SOURCE || 'sim';
 const sourceName = ['sim', 'presage'].includes(requestedSource) ? requestedSource : 'sim';

@@ -2,8 +2,7 @@ import {
   SmartSpectraSDK,
   ValidationCode,
   ProcessingStatus,
-  breathingMetrics,
-  cardioMetrics,
+  MetricType,
 } from '@smartspectra/node-sdk/renderer';
 import { decodeMetrics } from '@smartspectra/node-sdk/messages';
 
@@ -46,13 +45,14 @@ const finitePositive = (value) => {
 
 function createClient(callbacks) {
   let sdk = null;
+  let cameraStream = null;
   let lastEmitAt = 0;
 
   return {
     async start(options) {
       sdk = new SmartSpectraSDK({
         apiKey: options.apiKey,
-        requestedMetrics: [...breathingMetrics, ...cardioMetrics],
+        requestedMetrics: [MetricType.BREATHING_RATE, MetricType.PULSE_RATE],
         enableTelemetry: Boolean(options.enableTelemetry),
         sendTimeoutMs: 30000,
       });
@@ -71,7 +71,6 @@ function createClient(callbacks) {
       }));
       sdk.on('metrics', (buffer) => {
         const now = Date.now();
-        if (now - lastEmitAt < 750) return;
         let metrics;
         try { metrics = decodeMetrics(buffer); }
         catch (error) { callbacks.onError?.(`Could not read metrics: ${error.message}`); return; }
@@ -80,6 +79,11 @@ function createClient(callbacks) {
         const breathPoint = latest(metrics?.breathing?.rate);
         const pulse = finitePositive(pulsePoint?.value);
         const breath = finitePositive(breathPoint?.value);
+        callbacks.onMetricsPacket?.({
+          pulsePresent: pulse !== null,
+          breathPresent: breath !== null,
+        });
+        if (now - lastEmitAt < 750) return;
         if (pulse === null && breath === null) return;
         lastEmitAt = now;
         callbacks.onSample?.({
@@ -95,14 +99,35 @@ function createClient(callbacks) {
         { code, retryable: Boolean(retryable) },
       ));
 
+      // On lower-powered Windows systems, cloning and IPC-copying 720p RGBA
+      // frames can fall below SmartSpectra's sustained-FPS requirement. Own a
+      // 640x480/30 stream explicitly so preview and measurement share a live
+      // camera source while keeping the renderer-to-main frame path light.
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          frameRate: { ideal: 30 },
+          facingMode: 'user',
+        },
+      });
+      callbacks.onStream?.(cameraStream);
+      sdk.useMediaStream(cameraStream);
       await sdk.start();
     },
 
     async stop() {
       const active = sdk;
       sdk = null;
-      if (!active) return;
-      try { await active.stop(); } finally { active.destroy(); }
+      try {
+        if (active) await active.stop();
+      } finally {
+        if (active) active.destroy();
+        if (cameraStream) {
+          for (const track of cameraStream.getTracks()) track.stop();
+          cameraStream = null;
+        }
+      }
     },
   };
 }

@@ -4,8 +4,16 @@
   "description": "A privacy-conscious message composer that pauses email actions until live pulse and breathing settle toward a personal baseline.",
   "license": "MIT",
   "author": "Agozie180",
-  "engines": { "node": ">=20" },
-  "keywords": ["smartspectra", "electron", "digital-wellbeing", "pulse", "breathing"],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "smartspectra",
+    "electron",
+    "digital-wellbeing",
+    "pulse",
+    "breathing"
+  ],
   "main": "main.js",
   "scripts": {
     "build": "npm run build:preload && npm run build:renderer",
@@ -16,7 +24,8 @@
     "start:presage": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron .",
     "test": "node --test test/lock.test.js",
     "test:smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/electron-smoke.js",
-    "test:presage-smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=presage SMARTSPECTRA_API_KEY= electron scripts/presage-smoke.js"
+    "test:presage-smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=presage SMARTSPECTRA_API_KEY= electron scripts/presage-smoke.js",
+    "test:live": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron scripts/live-electron-smoke.js"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
@@ -24,6 +33,7 @@
     "esbuild": "^0.25.12"
   },
   "dependencies": {
-    "@smartspectra/node-sdk": "^3.5.0"
+    "@smartspectra/node-sdk": "^3.5.0",
+    "dotenv": "^16.6.1"
   }
 }
