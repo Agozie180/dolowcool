@@ -43,8 +43,10 @@ Allow the baseline to finish, then move the simulator slider toward **worked up*
 Requirements:
 
 - Node.js 20 or newer
-- Windows x64, macOS Apple Silicon, or Linux x64/ARM64
+- Windows x64, macOS Apple Silicon, or Linux x64/ARM64. Linux requires glibc 2.35 or newer (for example Ubuntu 22.04+ or Debian 12+).
 - A SmartSpectra API key
+
+This platform matrix is the one published for `@smartspectra/node-sdk` 3.5.0 in Presage's [Node.js and Electron SDK documentation](https://smartspectra.presagetech.com/docs/nodejs).
 
 PowerShell:
 
