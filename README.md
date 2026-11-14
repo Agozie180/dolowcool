@@ -13,7 +13,7 @@ Built for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/pre
 - **The live signal controls the core interaction.** Pulse and breathing rate directly determine whether the message action is available.
 - **Personal, not population-based.** Dolowcool learns a stable baseline for each session instead of applying a universal “calm” number.
 - **Continuous means continuous.** Lost samples reset the calm hold; a signal gap can never silently unlock the action.
-- **User agency remains intact.** A clearly disclosed override is available for urgent situations, and nothing is sent automatically.
+- **User agency remains intact.** A clearly disclosed override requires a continuous three-second press-and-hold, and nothing is sent automatically.
 - **The data boundaries are visible before sensing starts.** Dolowcool stores no frames or physiological readings, and it explicitly disables optional SmartSpectra telemetry unless the app owner enables it.
 
 ## Experience

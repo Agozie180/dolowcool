@@ -96,6 +96,16 @@ app.whenReady().then(async () => {
       assert.equal(whyState.rule, '≤0.5× for 8s');
       assert.match(whyState.pulseBase, /bpm$/);
       assert.match(whyState.breathBase, /br\/min$/);
+      const overrideState = await win.webContents.executeJavaScript(`(() => {
+        document.getElementById('override').click();
+        return {
+          visible: !document.getElementById('overrideConfirm').classList.contains('hidden'),
+          label: document.getElementById('overrideYes').textContent
+        };
+      })()`);
+      assert.equal(overrideState.visible, true);
+      assert.match(overrideState.label, /Press and hold 3 seconds/);
+      await win.webContents.executeJavaScript(`document.getElementById('overrideNo').click()`);
       await capture(win, 'locked');
     }
 

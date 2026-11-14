@@ -2,6 +2,7 @@ const $ = (id) => document.getElementById(id);
 const q = (selector) => document.querySelector(selector);
 const engine = new DolowcoolLock.LockEngine();
 const sessionRecap = new DolowcoolRecap.SessionRecap();
+const overrideGate = new DolowcoolHold.HoldGate(3000);
 
 let active = false;
 let sourceName = 'sim';
@@ -11,6 +12,7 @@ let lastSampleAt = 0;
 let currentSample = null;
 let currentSnapshot = null;
 let cancelDemoScenario = null;
+let overrideHoldTimer = null;
 
 const numberText = (value, digits = 0) => Number.isFinite(value) ? Number(value).toFixed(digits) : '—';
 const percentAbove = (value, baseline) => Number.isFinite(value) && Number.isFinite(baseline)
@@ -24,13 +26,55 @@ function setQuality(kind, text) {
 
 function composerHasMessage() { return Boolean($('msg').value.trim()); }
 
+function resetOverrideHold() {
+  if (overrideHoldTimer) clearInterval(overrideHoldTimer);
+  overrideHoldTimer = null;
+  overrideGate.cancel();
+  const button = $('overrideYes');
+  button.classList.remove('holding');
+  button.style.setProperty('--hold-progress', '0%');
+  button.textContent = 'Press and hold 3 seconds to open email anyway';
+}
+
+function beginOverrideHold(event) {
+  if (event.type === 'pointerdown' && event.button !== 0) return;
+  if (event.repeat || overrideGate.active) return;
+  event.preventDefault();
+  const button = $('overrideYes');
+  overrideGate.start(performance.now());
+  button.classList.add('holding');
+  const update = () => {
+    const progress = overrideGate.update(performance.now());
+    const remaining = Math.max(0, (overrideGate.durationMs * (1 - progress)) / 1000);
+    button.style.setProperty('--hold-progress', `${Math.round(progress * 100)}%`);
+    button.textContent = progress < 1 ? `Keep holding… ${remaining.toFixed(1)}s` : 'Override confirmed';
+    if (overrideGate.completed) {
+      if (overrideHoldTimer) clearInterval(overrideHoldTimer);
+      overrideHoldTimer = null;
+      button.classList.remove('holding');
+      openEmail(true);
+      resetOverrideHold();
+    }
+  };
+  update();
+  overrideHoldTimer = setInterval(update, 50);
+}
+
+function cancelOverrideHold(event) {
+  if (event?.type === 'keyup' && ![' ', 'Enter'].includes(event.key)) return;
+  if (!overrideGate.completed) resetOverrideHold();
+}
+
 function updateActionAvailability() {
   const unlocked = active && qualityOk && !timedOut && currentSnapshot?.state === 'unlocked';
   const hasMessage = composerHasMessage();
   $('send').disabled = !(unlocked && hasMessage);
   $('copy').disabled = !(unlocked && hasMessage);
   $('override').classList.toggle('hidden', !(active && currentSnapshot?.state === 'locked' && hasMessage));
-  if (currentSnapshot?.state !== 'locked') $('overrideConfirm').classList.add('hidden');
+  if (currentSnapshot?.state !== 'locked') {
+    $('overrideConfirm').classList.add('hidden');
+    resetOverrideHold();
+  }
 }
 
 function metricMeta(value, baseline, unit) {
@@ -506,15 +550,30 @@ async function openEmail(isOverride = false) {
       ? 'Override used. Your email app is open; nothing was sent automatically.'
       : 'Opened in your email app. Review once more before sending.';
     $('overrideConfirm').classList.add('hidden');
+    resetOverrideHold();
   } catch (error) {
     $('toast').textContent = String(error.message || error).replace(/^Error invoking remote method.*?Error: /, '');
   }
 }
 
 $('send').onclick = () => openEmail(false);
-$('override').onclick = () => $('overrideConfirm').classList.remove('hidden');
-$('overrideNo').onclick = () => $('overrideConfirm').classList.add('hidden');
-$('overrideYes').onclick = () => openEmail(true);
+$('override').onclick = () => {
+  $('overrideConfirm').classList.remove('hidden');
+  $('overrideYes').focus();
+};
+$('overrideNo').onclick = () => {
+  resetOverrideHold();
+  $('overrideConfirm').classList.add('hidden');
+  $('override').focus();
+};
+$('overrideYes').addEventListener('pointerdown', beginOverrideHold);
+$('overrideYes').addEventListener('pointerup', cancelOverrideHold);
+$('overrideYes').addEventListener('pointercancel', cancelOverrideHold);
+$('overrideYes').addEventListener('pointerleave', cancelOverrideHold);
+$('overrideYes').addEventListener('keydown', (event) => {
+  if ([' ', 'Enter'].includes(event.key)) beginOverrideHold(event);
+});
+$('overrideYes').addEventListener('keyup', cancelOverrideHold);
 
 try {
   const saved = JSON.parse(localStorage.getItem('dolowcool-draft') || 'null');

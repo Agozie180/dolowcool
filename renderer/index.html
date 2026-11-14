@@ -130,8 +130,8 @@
           <button id="override" class="text-button hidden">Need to act now? Use a deliberate override</button>
           <button id="discard" class="text-button draft-delete">Discard local draft</button>
           <div id="overrideConfirm" class="override-confirm hidden">
-            <p><strong>You are still in control.</strong> This bypasses the settling pause. Dolowcool will open your email app, but it will not send automatically.</p>
-            <div><button id="overrideYes" class="danger-soft">Open email anyway</button><button id="overrideNo" class="text-button">Keep the pause</button></div>
+            <p id="overrideHelp"><strong>You are still in control.</strong> This bypasses the settling pause. Dolowcool will open your email app, but it will not send automatically.</p>
+            <div><button id="overrideYes" class="danger-soft hold-button" aria-describedby="overrideHelp">Press and hold 3 seconds to open email anyway</button><button id="overrideNo" class="text-button">Keep the pause</button></div>
           </div>
           <p id="toast" class="toast" aria-live="polite"></p>
         </section>
@@ -162,6 +162,7 @@
   <script src="lock.js"></script>
   <script src="demo-scenario.js"></script>
   <script src="session-recap.js"></script>
+  <script src="hold-confirm.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
