@@ -12,6 +12,8 @@ npm run start:sim
 
 Built for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04).
 
+[![CI](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml)
+
 The GIF is captured from the real Electron UI in simulator mode. It contains no face, camera frames, API key, or readings from a person. The competition demo must use the live SmartSpectra source.
 
 ## Why it is different
