@@ -10,16 +10,16 @@ const {
 
 const VALIDATION_MESSAGES = {
   0: 'Signal is clear.',
-  1: 'No face found. Sit in front of the camera.',
-  2: 'More than one face is visible.',
-  3: 'Center your face inside the guide.',
-  4: 'Adjust your distance from the camera.',
+  1: 'Move into view, then step back so your face and upper chest are visible.',
+  2: 'Keep only one person in the camera view.',
+  3: 'Move left or right until your face is centered in the guide.',
+  4: 'Move a little closer or farther away until your face fits the guide.',
   5: 'Too dark. Add soft light in front of you.',
-  6: 'Too bright. Reduce glare or backlighting.',
+  6: 'Too bright. Reduce glare or move away from strong backlighting.',
   7: 'Step back until your face, shoulders, and upper chest are visible.',
   10: 'Camera is tuning. Hold still.',
-  11: 'Camera frame rate is too low.',
-  12: 'Too much movement. Hold still.',
+  11: 'Camera frame rate is too low. Close other camera apps and keep this window active.',
+  12: 'Too much movement. Rest the camera and hold comfortably still.',
   13: 'Move a little farther away.',
   14: 'Move a little closer.',
   15: 'Lower your face inside the guide.',
@@ -42,7 +42,7 @@ const finitePositive = (value) => {
   return Number.isFinite(number) && number > 0 ? number : null;
 };
 
-module.exports = function createPresageSource(options = {}) {
+function createPresageSource(options = {}) {
   const em = new EventEmitter();
   let sdk = null;
   let lastSampleAt = 0;
@@ -137,4 +137,7 @@ module.exports = function createPresageSource(options = {}) {
   };
 
   return em;
-};
+}
+
+module.exports = createPresageSource;
+module.exports.VALIDATION_MESSAGES = VALIDATION_MESSAGES;
