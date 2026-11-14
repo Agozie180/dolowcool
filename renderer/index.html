@@ -82,6 +82,19 @@
           <div class="progress-track"><div id="progressFill"></div></div>
         </section>
 
+        <section class="panel why-panel" aria-labelledby="whyTitle">
+          <div class="panel-head">
+            <div><p class="eyebrow">Transparent by design</p><h2 id="whyTitle">Why is this paused?</h2></div>
+            <span class="rule-badge">personal baseline</span>
+          </div>
+          <dl class="why-grid">
+            <div><dt>Pulse</dt><dd><strong id="whyPulseNow">—</strong> now · <span id="whyPulseBase">—</span> baseline</dd></div>
+            <div><dt>Breathing</dt><dd><strong id="whyBreathNow">—</strong> now · <span id="whyBreathBase">—</span> baseline</dd></div>
+            <div><dt>Pause rule</dt><dd><strong id="whyScore">0.0×</strong> now · pauses at <span id="whyPauseThreshold">1.0×</span></dd></div>
+            <div><dt>Unlock rule</dt><dd><strong id="whyCalmCountdown">not started</strong> · <span id="whyCalmRule">≤0.5× for 8s</span></dd></div>
+          </dl>
+        </section>
+
         <section id="simBox" class="panel simulator hidden">
           <div><p class="eyebrow">Demo control · Simulated</p><h3>Simulate relative arousal</h3></div>
           <input id="sim" type="range" min="0" max="1" step="0.05" value="0" aria-label="Simulated arousal">

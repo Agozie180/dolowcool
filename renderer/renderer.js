@@ -46,6 +46,10 @@ function renderMetrics(sample, snapshot) {
   $('breathNow').textContent = numberText(sample?.breath, 1);
   $('pulseMeta').textContent = metricMeta(sample?.pulse, snapshot?.base?.pulse, 'bpm');
   $('breathMeta').textContent = metricMeta(sample?.breath, snapshot?.base?.breath, 'br/min');
+  $('whyPulseNow').textContent = Number.isFinite(sample?.pulse) ? `${numberText(sample.pulse)} bpm` : '—';
+  $('whyBreathNow').textContent = Number.isFinite(sample?.breath) ? `${numberText(sample.breath, 1)} br/min` : '—';
+  $('whyPulseBase').textContent = Number.isFinite(snapshot?.base?.pulse) ? `${numberText(snapshot.base.pulse)} bpm` : 'learning';
+  $('whyBreathBase').textContent = Number.isFinite(snapshot?.base?.breath) ? `${numberText(snapshot.base.breath, 1)} br/min` : 'learning';
 }
 
 function lockExplanation(snapshot) {
@@ -62,6 +66,12 @@ function lockExplanation(snapshot) {
 function renderSnapshot(snapshot) {
   currentSnapshot = snapshot;
   $('score').textContent = numberText(snapshot.score, 1);
+  $('whyScore').textContent = `${numberText(snapshot.score, 1)}×`;
+  $('whyPauseThreshold').textContent = `${numberText(engine.cfg.lockAt, 1)}×`;
+  $('whyCalmRule').textContent = `≤${numberText(engine.cfg.unlockAt, 1)}× for ${engine.cfg.holdSeconds}s`;
+  $('whyCalmCountdown').textContent = snapshot.state !== 'locked'
+    ? (snapshot.state === 'unlocked' ? 'complete' : 'not started')
+    : (snapshot.calmLeft === null ? 'waiting below threshold' : `${snapshot.calmLeft}s remaining`);
   $('fill').className = snapshot.state === 'locked' ? 'fill hot' : 'fill';
   $('fill').style.width = `${Math.min(snapshot.score / 2, 1) * 100}%`;
   q('.gauge')?.setAttribute('aria-valuenow', String(Math.min(2, snapshot.score)));
@@ -342,6 +352,8 @@ function resetVisualState() {
   engine.reset();
   $('pulseNow').textContent = '—'; $('breathNow').textContent = '—';
   $('pulseMeta').textContent = 'Waiting for a reading'; $('breathMeta').textContent = 'Waiting for a reading';
+  $('whyPulseNow').textContent = '—'; $('whyBreathNow').textContent = '—';
+  $('whyPulseBase').textContent = 'learning'; $('whyBreathBase').textContent = 'learning';
   $('score').textContent = '0.0'; $('fill').style.width = '0%'; $('progressFill').style.width = '0%';
   $('overrideConfirm').classList.add('hidden');
   setQuality('waiting', 'Waiting');

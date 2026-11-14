@@ -84,6 +84,18 @@ app.whenReady().then(async () => {
       await waitFor(async () => win.webContents.executeJavaScript(
         `document.getElementById('lockBanner').classList.contains('locked')`
       ), 'Simulator did not activate the pause.');
+      const whyState = await win.webContents.executeJavaScript(`({
+        score: document.getElementById('whyScore').textContent,
+        pause: document.getElementById('whyPauseThreshold').textContent,
+        rule: document.getElementById('whyCalmRule').textContent,
+        pulseBase: document.getElementById('whyPulseBase').textContent,
+        breathBase: document.getElementById('whyBreathBase').textContent
+      })`);
+      assert.match(whyState.score, /×$/);
+      assert.equal(whyState.pause, '1.0×');
+      assert.equal(whyState.rule, '≤0.5× for 8s');
+      assert.match(whyState.pulseBase, /bpm$/);
+      assert.match(whyState.breathBase, /br\/min$/);
       await capture(win, 'locked');
     }
 
