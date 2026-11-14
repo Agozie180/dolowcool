@@ -130,10 +130,25 @@
         <p class="privacy-note">Frames are processed on-device and shown only for framing; Dolowcool does not store them. Pulse and breathing readings stay in memory for this session. SmartSpectra still authenticates the API key and validates the subscription. <span id="telemetryNote">SDK telemetry is off.</span></p>
       </div>
     </section>
+
+    <section id="recap" class="recap-shell hidden" aria-labelledby="recapTitle">
+      <div class="panel recap-card">
+        <p class="eyebrow">Session complete</p>
+        <h1 id="recapTitle">You made room before acting.</h1>
+        <p id="recapWait" class="recap-wait" aria-live="polite">You waited 0 seconds.</p>
+        <div class="recap-chart-wrap">
+          <canvas id="recapChart" role="img" aria-label="Timeline of relative arousal score with pause and unlock markers"></canvas>
+          <div class="recap-legend"><span><i class="line-key"></i>relative score</span><span><i class="pause-key"></i>pause</span><span><i class="unlock-key"></i>unlock</span></div>
+        </div>
+        <p class="recap-note">This recap exists only in memory. No frames or physiological values are shown or saved. It is discarded when you leave this screen.</p>
+        <button id="recapDone" class="primary wide">Done · discard recap <span>→</span></button>
+      </div>
+    </section>
   </main>
 
   <script src="lock.js"></script>
   <script src="demo-scenario.js"></script>
+  <script src="session-recap.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

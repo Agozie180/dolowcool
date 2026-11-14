@@ -109,8 +109,23 @@ app.whenReady().then(async () => {
 
     await win.webContents.executeJavaScript(`document.getElementById('stop').click()`);
     await waitFor(async () => win.webContents.executeJavaScript(
-      `!document.getElementById('consent').classList.contains('hidden')`
-    ), 'Stop did not return to the consent screen.');
+      `!document.getElementById('recap').classList.contains('hidden') &&
+       document.getElementById('recapWait').textContent.includes('You waited')`
+    ), 'Stop did not show the memory-only recap.');
+    const recapState = await win.webContents.executeJavaScript(`({
+      consentHidden: document.getElementById('consent').classList.contains('hidden'),
+      recapVisible: !document.getElementById('recap').classList.contains('hidden'),
+      chartWidth: document.getElementById('recapChart').width
+    })`);
+    assert.equal(recapState.consentHidden, true);
+    assert.equal(recapState.recapVisible, true);
+    assert.ok(recapState.chartWidth > 0);
+
+    await win.webContents.executeJavaScript(`document.getElementById('recapDone').click()`);
+    await waitFor(async () => win.webContents.executeJavaScript(
+      `!document.getElementById('consent').classList.contains('hidden') &&
+       document.getElementById('recap').classList.contains('hidden')`
+    ), 'Closing the recap did not return to consent.');
 
     console.log('electron smoke test passed');
     app.exit(0);

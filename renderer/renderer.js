@@ -1,6 +1,7 @@
 const $ = (id) => document.getElementById(id);
 const q = (selector) => document.querySelector(selector);
 const engine = new DolowcoolLock.LockEngine();
+const sessionRecap = new DolowcoolRecap.SessionRecap();
 
 let active = false;
 let sourceName = 'sim';
@@ -165,6 +166,65 @@ function handleSample(sample) {
   const snapshot = engine.push(sample);
   renderMetrics(sample, snapshot);
   renderSnapshot(snapshot);
+  sessionRecap.record(snapshot, sample.t);
+}
+
+function drawRecap(summary) {
+  const seconds = Math.max(0, Math.round(summary.waitedMs / 1000));
+  $('recapWait').textContent = `You waited ${seconds} ${seconds === 1 ? 'second' : 'seconds'}.`;
+  const canvas = $('recapChart');
+  const width = Math.max(520, Math.floor(canvas.getBoundingClientRect().width || 760));
+  const height = 220;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(ratio, ratio);
+  ctx.clearRect(0, 0, width, height);
+  const pad = { left: 34, right: 18, top: 18, bottom: 28 };
+  const chartW = width - pad.left - pad.right;
+  const chartH = height - pad.top - pad.bottom;
+  const duration = Math.max(1, summary.durationMs);
+  const maxScore = Math.max(2, ...summary.points.map((point) => point.score));
+  const x = (elapsedMs) => pad.left + Math.min(1, elapsedMs / duration) * chartW;
+  const y = (score) => pad.top + chartH - Math.min(1, score / maxScore) * chartH;
+
+  ctx.strokeStyle = '#31423d';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, y(1));
+  ctx.lineTo(width - pad.right, y(1));
+  ctx.stroke();
+  ctx.fillStyle = '#94a59f';
+  ctx.font = '11px system-ui';
+  ctx.fillText('pause threshold', pad.left + 5, y(1) - 6);
+
+  summary.markers.forEach((marker) => {
+    ctx.strokeStyle = marker.type === 'pause' ? '#ff806f' : '#65d6a1';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x(marker.elapsedMs), pad.top);
+    ctx.lineTo(x(marker.elapsedMs), pad.top + chartH);
+    ctx.stroke();
+  });
+
+  if (summary.points.length) {
+    ctx.strokeStyle = '#c7f36a';
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    summary.points.forEach((point, index) => {
+      const px = x(point.elapsedMs);
+      const py = y(point.score);
+      if (index === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = '#94a59f';
+  ctx.fillText('start', pad.left, height - 8);
+  const endLabel = `${Math.round(duration / 1000)}s`;
+  ctx.fillText(endLabel, width - pad.right - ctx.measureText(endLabel).width, height - 8);
 }
 
 function handleError(raw, details = {}) {
@@ -300,6 +360,7 @@ $('start').onclick = async () => {
     const config = await window.dolowcool.config();
     sourceName = config.source;
     active = true;
+    sessionRecap.reset(Date.now());
     $('sourcePill').textContent = sourceName === 'sim' ? 'Simulator · Simulated' : 'Live SmartSpectra';
     $('privacyPill').innerHTML = `<span class="dot"></span>${config.telemetry ? 'Telemetry on' : 'Telemetry off'}`;
     $('privacyPill').className = config.telemetry ? 'pill' : 'pill safe';
@@ -324,6 +385,7 @@ $('start').onclick = async () => {
     document.body.dataset.sdkErrorMessage = String(error?.message || error);
     document.body.dataset.sdkErrorRetryable = String(Boolean(error?.retryable));
     active = false;
+    sessionRecap.clear();
     try { await window.dolowcool.stop(); } catch {}
     $('app').classList.add('hidden');
     $('consent').classList.remove('hidden');
@@ -342,14 +404,23 @@ $('stop').onclick = async () => {
   try {
     await window.dolowcool.stop();
   } finally {
+    const summary = sessionRecap.end(Date.now());
     $('app').classList.add('hidden');
-    $('consent').classList.remove('hidden');
+    $('recap').classList.remove('hidden');
     $('simBox').classList.add('hidden');
     $('simVisual').classList.add('hidden');
     $('agree').checked = false;
     $('start').disabled = true;
+    drawRecap(summary);
     resetVisualState();
   }
+};
+
+$('recapDone').onclick = () => {
+  sessionRecap.clear();
+  $('recap').classList.add('hidden');
+  $('consent').classList.remove('hidden');
+  $('recapChart').getContext('2d')?.clearRect(0, 0, $('recapChart').width, $('recapChart').height);
 };
 
 $('recalibrate').onclick = () => {
