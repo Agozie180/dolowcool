@@ -1,0 +1,20 @@
+{
+  "name": "dolowcool",
+  "version": "0.1.0",
+  "description": "A message composer whose Send button stays locked until your body settles down (Presage SmartSpectra challenge entry).",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:sim": "cross-env DOLOWCOOL_SOURCE=sim electron .",
+    "start:presage": "cross-env DOLOWCOOL_SOURCE=presage electron .",
+    "test": "node --test test/lock.test.js test/presage.test.js",
+    "test:smoke": "cross-env DOLOWCOOL_SOURCE=sim electron scripts/electron-smoke.js"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^43.8.1"
+  },
+  "dependencies": {
+    "@smartspectra/node-sdk": "^3.5.0"
+  }
+}

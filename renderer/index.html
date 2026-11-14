@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Dolowcool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<style>
+  :root{--bg:#0f1720;--card:#18232f;--ink:#e8eef4;--mute:#8da0b2;--ok:#3ecf8e;--hot:#ff6b5e;--line:#2a3a4a}
+  @media (prefers-color-scheme: light){:root{--bg:#f3f6f9;--card:#fff;--ink:#14202b;--mute:#5d7184;--line:#d5dee7}}
+  *{box-sizing:border-box} body{margin:0;font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:20px}
+  h1{margin:0 0 4px;font-size:22px} .sub{color:var(--mute);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  button{font:inherit;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--ok);color:#06210f;font-weight:600}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)} button:disabled{opacity:.4;cursor:not-allowed}
+  textarea{width:100%;height:160px;resize:vertical;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:10px;font:inherit}
+  .gauge{height:14px;border-radius:7px;background:var(--line);position:relative;overflow:hidden}
+  .fill{height:100%;width:0;background:var(--ok);transition:width .4s,background .4s}
+  .mark{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.5}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px} .hidden{display:none} .mute{color:var(--mute)}
+  .status{font-weight:600;margin-top:8px}.err{color:var(--hot)} .privacy{font-size:13px}
+</style></head><body>
+<h1>Dolowcool</h1><p class="sub">Write the angry message. Send it when your body says you’re ready.</p>
+
+<section id="consent" class="card">
+  <strong>Before we start</strong>
+  <p class="mute">Dolowcool uses your camera to estimate pulse and breathing rate (via the Presage SmartSpectra SDK) while this window is open. It compares them to <em>your own</em> calm baseline and only decides whether Send is locked. It does not diagnose anything or judge your emotions. Dolowcool stores no video or readings, and SDK telemetry is off by default. Your API key is still used to authenticate with Presage. You can stop at any time.</p>
+  <label><input type="checkbox" id="agree"> I understand and I’m choosing to turn the camera on.</label>
+  <div class="row"><button id="start" disabled>Start</button></div>
+  <p id="startErr" class="err"></p>
+</section>
+
+<section id="app" class="hidden">
+  <div class="card">
+    <div id="status" class="status" aria-live="polite">Starting…</div>
+    <div class="gauge" style="margin-top:10px"><div id="fill" class="fill"></div><div class="mark" style="left:50%" title="lock point"></div></div>
+    <div class="mute" id="detail" style="margin-top:6px"></div>
+  </div>
+  <div class="card">
+    <textarea id="msg" placeholder="Type what you really want to say…"></textarea>
+    <div class="row"><button id="send" disabled>Send</button><button id="draft" class="ghost">Save draft &amp; sleep on it</button><button id="recalibrate" class="ghost">Recalibrate</button><button id="stop" class="ghost">Stop camera</button></div>
+    <div id="toast" class="mute" style="margin-top:8px" aria-live="polite"></div>
+  </div>
+  <div id="simBox" class="card hidden"><strong>Simulated signals</strong>
+    <div class="mute">Drag to fake how worked up you are (dev mode, no camera).</div>
+    <input id="sim" type="range" min="0" max="1" step="0.05" value="0" style="width:100%">
+  </div>
+  <p class="mute privacy">Wellness demo only—not a medical device. Send is simulated; no message leaves the app.</p>
+</section>
+<script src="lock.js"></script><script src="renderer.js"></script>
+</body></html>
