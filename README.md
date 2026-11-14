@@ -38,3 +38,7 @@ Camera capture starts only after an explicit checkbox and Start click, and Stop 
 - Presage documents that telemetry, when enabled, contains session/device/performance/quality summaries but no raw frames or measured physiological values. Authenticated requests can be associated with an account, and diagnostic reports currently have no automatic expiration.
 
 See Presage's [SDK Telemetry & Privacy](https://smartspectra.presagetech.com/docs/telemetry-and-privacy) documentation and [Privacy Policy](https://api.physiology.presagetech.com/privacypolicy).
+
+## License
+
+Dolowcool is available under the [MIT License](LICENSE).
