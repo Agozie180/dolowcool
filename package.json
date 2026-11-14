@@ -1,7 +1,7 @@
 {
   "name": "dolowcool",
   "version": "0.2.0",
-  "description": "A privacy-conscious message composer that pauses email actions until live pulse and breathing settle toward a personal baseline.",
+  "description": "A desktop message composer that pauses email actions based on live pulse and breathing relative to a personal baseline.",
   "license": "MIT",
   "author": "Agozie180",
   "engines": {

@@ -126,3 +126,10 @@ The full claim-by-claim explanation and open questions are in [docs/consent-and-
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Submission working files
+
+- [DEV post draft](docs/devto-post.md)
+- [90–120 second demo script](docs/demo-script.md)
+- [Submission checklist](docs/submission-checklist.md)
+- [Detailed consent and data notes](docs/consent-and-data.md)
