@@ -76,6 +76,21 @@ app.whenReady().then(async () => {
     ), 'Simulator readings did not reach the renderer.');
     await capture(win, 'workspace');
 
+    if (!process.env.DOLOWCOOL_SCREENSHOT_DIR) {
+      await win.webContents.executeJavaScript(`document.getElementById('runDemo').click()`);
+      await waitFor(async () => win.webContents.executeJavaScript(
+        `document.getElementById('demoStage').textContent.includes('Learning a settled baseline')`
+      ), 'Judge scenario did not start.');
+      const judgeMode = await win.webContents.executeJavaScript(`({
+        source: document.getElementById('sourcePill').textContent,
+        button: document.getElementById('runDemo').textContent,
+        disabled: document.getElementById('runDemo').disabled
+      })`);
+      assert.match(judgeMode.source, /Simulated/);
+      assert.match(judgeMode.button, /running/i);
+      assert.equal(judgeMode.disabled, true);
+    }
+
     if (process.env.DOLOWCOOL_SCREENSHOT_DIR) {
       await win.webContents.executeJavaScript(`
         document.getElementById('recipient').value = 'alex@example.com';
