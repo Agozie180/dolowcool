@@ -23,12 +23,12 @@
         <h1>Write now.<br><span>Send when settled.</span></h1>
         <p class="lede">Dolowcool uses camera-estimated pulse and breathing rate to add a deliberate pause before a message leaves your hands.</p>
         <div class="consent-points">
-          <div><span>01</span><p><strong>You choose when sensing starts.</strong><br>The camera never starts before this screen.</p></div>
-          <div><span>02</span><p><strong>No diagnosis or emotion detection.</strong><br>Readings are compared only with your own baseline.</p></div>
-          <div><span>03</span><p><strong>Privacy-first by default.</strong><br>Dolowcool stores no video or readings. SDK telemetry is off.</p></div>
+          <div><span>01</span><p><strong>Camera frames are processed on this device.</strong><br>SmartSpectra says its backend is contacted to authenticate the API key and validate the subscription.</p></div>
+          <div><span>02</span><p><strong>Dolowcool does not save frames or readings.</strong><br>Pulse, breathing rate, and the session baseline stay in memory until the session ends.</p></div>
+          <div><span>03</span><p><strong>SmartSpectra telemetry is off by default.</strong><br>If enabled by the app owner, it sends authenticated device, session, performance, and quality summaries—not raw frames or physiological values.</p></div>
         </div>
-        <label class="consent-check"><input type="checkbox" id="agree"><span>I understand and choose to turn on camera-based sensing.</span></label>
-        <button id="start" class="primary wide" disabled>Begin a private session <span>→</span></button>
+        <label class="consent-check"><input type="checkbox" id="agree"><span>I understand this data flow and choose to turn on camera-based sensing.</span></label>
+        <button id="start" class="primary wide" disabled>Begin session <span>→</span></button>
         <p id="startErr" class="error" role="alert"></p>
         <p class="fineprint">Wellness and reflection tool only—not a medical device. You can stop at any time.</p>
       </div>
@@ -125,7 +125,7 @@
           <button id="recalibrate" class="text-button">↻ Recalibrate</button>
           <button id="stop" class="text-button">■ Stop camera &amp; end session</button>
         </section>
-        <p class="privacy-note">Video is displayed only for framing and is not stored by Dolowcool. Pulse and breathing readings stay in memory for this session. <span id="telemetryNote">SDK telemetry is off.</span></p>
+        <p class="privacy-note">Frames are processed on-device and shown only for framing; Dolowcool does not store them. Pulse and breathing readings stay in memory for this session. SmartSpectra still authenticates the API key and validates the subscription. <span id="telemetryNote">SDK telemetry is off.</span></p>
       </div>
     </section>
   </main>

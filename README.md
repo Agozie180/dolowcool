@@ -2,7 +2,7 @@
 
 **Write now. Send when settled.**
 
-Dolowcool is a privacy-conscious desktop message composer whose email action pauses when camera-estimated pulse or breathing rate rises well above the user's own calm baseline. It unlocks only after a continuous settled hold—or the user can make an explicit, deliberate override.
+Dolowcool is a desktop message composer whose email action pauses when camera-estimated pulse or breathing rate rises well above the user's own calm baseline. It unlocks only after a continuous settled hold—or the user can make an explicit, deliberate override.
 
 Built for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04).
 
@@ -14,7 +14,7 @@ Built for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/pre
 - **Personal, not population-based.** Dolowcool learns a stable baseline for each session instead of applying a universal “calm” number.
 - **Continuous means continuous.** Lost samples reset the calm hold; a signal gap can never silently unlock the action.
 - **User agency remains intact.** A clearly disclosed override is available for urgent situations, and nothing is sent automatically.
-- **Privacy is the default.** No video or physiological readings are stored, and SmartSpectra telemetry is disabled unless explicitly enabled.
+- **The data boundaries are visible before sensing starts.** Dolowcool stores no frames or physiological readings, and it explicitly disables optional SmartSpectra telemetry unless the app owner enables it.
 
 ## Experience
 
@@ -103,17 +103,17 @@ The tests cover:
 
 ## Consent and data handling
 
-- Camera access starts only after an unchecked consent box is selected and **Begin a private session** is clicked.
-- **Stop camera & end session** releases the camera and discards in-memory readings.
-- Dolowcool stores no video and no physiological readings.
-- Optional message drafts are stored only in local `localStorage` and can be deleted with **Discard local draft**.
+- Camera-based sensing starts only after an unchecked consent box is selected and **Begin session** is clicked. **Stop camera & end session** releases the camera; a new session requires consent again.
+- Presage states that SmartSpectra metric computation runs on-device and its backend is contacted to authenticate the API key and validate the subscription. Camera frames are therefore not uploaded for metric computation. [Official SmartSpectra documentation index](https://smartspectra.presagetech.com/llms.txt)
+- Dolowcool stores no frames, physiological readings, baseline, relative-arousal score, or recap on disk. Those values stay in memory for the session. Optional message drafts are stored in local `localStorage` and can be removed with **Discard local draft**.
+- SmartSpectra telemetry defaults to on in the SDK. Dolowcool explicitly sets `enableTelemetry: false` unless the app owner sets `DOLOWCOOL_TELEMETRY=1`. Presage says disabled telemetry starts no telemetry session and transmits no telemetry. Authentication and subscription validation still occur. [SDK Telemetry & Privacy](https://smartspectra.presagetech.com/docs/telemetry-and-privacy)
+- When enabled, telemetry contains SDK/device/runtime details, session shape, performance counts, validation-state counts, coarse failure information, and timestamps. Device-readiness reports can also contain camera configuration, thresholds, diagnostic messages, paths, and platform errors. Presage says telemetry excludes raw frames and measured physiological values.
+- Telemetry uses account and device-authentication headers, so requests can be associated with an account and are not anonymous. Full readiness reports and access logs currently have no automatic expiration. Presage does not state a fixed retention period for session summaries or authentication/subscription-validation records on these pages.
+- Presage's broader Privacy Policy says personal information is retained as long as necessary, includes biometric/vital-sign language, and provides deletion requests through `support@presagetech.com`. It does not state how those broad clauses apply to a telemetry-off Node session. [Presage Privacy Policy](https://api.physiology.presagetech.com/privacypolicy)
 - The API key is loaded from `SMARTSPECTRA_API_KEY` only in Electron's main process. It is never exposed to the renderer or written to app storage.
-- SmartSpectra telemetry is disabled by default with `enableTelemetry: false`. Set `DOLOWCOOL_TELEMETRY=1` to opt in.
-- Presage states that enabled telemetry contains device, session, performance, and quality summaries, but not raw frames or physiological values. Authenticated requests may be associated with an account, and diagnostic reports currently have no automatic expiration.
-- Dolowcool uses no optional AI service.
-- This is a wellness and reflection tool, not a medical device. It does not diagnose emotions, conditions, or health states.
+- Dolowcool uses no optional AI service and makes no diagnosis, treatment recommendation, emotion inference, or medical decision.
 
-See [SmartSpectra SDK Telemetry & Privacy](https://smartspectra.presagetech.com/docs/telemetry-and-privacy) and the [Presage Privacy Policy](https://api.physiology.presagetech.com/privacypolicy).
+The full claim-by-claim explanation and open questions are in [docs/consent-and-data.md](docs/consent-and-data.md).
 
 ## License
 
