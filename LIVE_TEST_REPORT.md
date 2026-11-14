@@ -44,6 +44,12 @@ Dolowcool now captures directly through the native SDK in Electron's main proces
 
 Authentication, permissions, SDK startup, native frame transport, validation delivery, preview rendering, pulse output, and breathing output are all verified.
 
+## Post-hardening bounded rerun
+
+A single bounded rerun after the competition-hardening changes opened the camera stream but remained in SmartSpectra's documented `kNoFaceFound` validation state. No metric packets were produced, so that run was recorded as **incomplete/failed**, as intended by the test's fail-closed rule. It did not expose an API key, frame, or physiological value.
+
+This unattended result does not replace the earlier attended two-metric pass above, but it also does not re-verify the full live path after the latest UI changes. The owner must perform the final attended run while centered with face and upper chest visible before recording the demo.
+
 ## Reproduce
 
 1. Put the API key in the ignored `.env` file.

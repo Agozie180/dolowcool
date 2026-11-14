@@ -29,6 +29,23 @@ const readDiagnostics = (win) => win.webContents.executeJavaScript(`(() => ({
   status: document.getElementById('status').textContent.trim(),
 }))()`);
 
+async function stopAndReturnToConsent(win) {
+  const state = await win.webContents.executeJavaScript(`({
+    appVisible: !document.getElementById('app').classList.contains('hidden'),
+    consentVisible: !document.getElementById('consent').classList.contains('hidden')
+  })`);
+  if (state.appVisible) {
+    await win.webContents.executeJavaScript(`document.getElementById('stop').click()`);
+    await waitFor(async () => win.webContents.executeJavaScript(
+      `!document.getElementById('recap').classList.contains('hidden')`
+    ), 'Live session did not show its recap while stopping.', 10000);
+    await win.webContents.executeJavaScript(`document.getElementById('recapDone').click()`);
+  }
+  await waitFor(async () => win.webContents.executeJavaScript(
+    `!document.getElementById('consent').classList.contains('hidden')`
+  ), 'Live session did not return to consent.', 10000);
+}
+
 app.whenReady().then(async () => {
   let win;
   try {
@@ -83,25 +100,16 @@ app.whenReady().then(async () => {
         ? `SDK_ERROR_CODE=${result.code || 'unknown'} PROCESSING_STATUS=${result.processingStatus || 'unknown'} STREAM=${Boolean(result.hasStream)} RETRYABLE=${Boolean(result.retryable)} MESSAGE=${result.message}`
         : 'Live source failed.',
     );
-    await win.webContents.executeJavaScript(`document.getElementById('stop').click()`);
-    await waitFor(async () => win.webContents.executeJavaScript(
-      `!document.getElementById('consent').classList.contains('hidden')`
-    ), 'Live session did not stop cleanly.');
+    await stopAndReturnToConsent(win);
     console.log(`RESULT=PASSED MODE=${expectMetrics ? 'metrics' : 'transport'} STREAM=${result.hasStream} PULSE_RECEIVED=${result.pulseReceived} BREATH_RECEIVED=${result.breathReceived} QUALITY=${result.quality}`);
     await wait(1000);
-    app.quit();
+    app.exit(0);
   } catch (error) {
     if (win && !win.isDestroyed()) {
-      try {
-        await win.webContents.executeJavaScript(`document.getElementById('stop').click()`);
-        await waitFor(async () => win.webContents.executeJavaScript(
-          `!document.getElementById('consent').classList.contains('hidden')`
-        ), 'Live session did not stop cleanly after failure.', 10000);
-      } catch {}
+      try { await stopAndReturnToConsent(win); } catch {}
     }
     console.error(`RESULT=FAILED REASON=${error.message}`);
     await wait(1000);
-    app.exitCode = 1;
-    app.quit();
+    app.exit(1);
   }
 });
