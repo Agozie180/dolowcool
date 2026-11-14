@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { app } = require('electron');
+app.disableHardwareAcceleration();
 const main = require('../main');
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -115,7 +116,25 @@ app.whenReady().then(async () => {
       assert.equal(overrideState.visible, true);
       assert.match(overrideState.label, /Press and hold 3 seconds/);
       await win.webContents.executeJavaScript(`document.getElementById('overrideNo').click()`);
+      const pauseAnnouncement = await win.webContents.executeJavaScript(
+        `document.getElementById('announcer').textContent`,
+      );
+      assert.match(pauseAnnouncement, /Message actions paused/);
       await capture(win, 'locked');
+
+      await win.webContents.executeJavaScript(`(() => {
+        const settledSlider = document.getElementById('sim');
+        settledSlider.value = '0';
+        settledSlider.dispatchEvent(new Event('input', { bubbles: true }));
+      })()`);
+      await waitFor(async () => win.webContents.executeJavaScript(
+        `document.getElementById('lockBanner').classList.contains('unlocked')`
+      ), 'Simulator did not complete the continuous calm hold.', 22000);
+      const unlockAnnouncement = await win.webContents.executeJavaScript(
+        `document.getElementById('announcer').textContent`,
+      );
+      assert.match(unlockAnnouncement, /Message actions unlocked/);
+      await capture(win, 'settled');
     }
 
     const draftResult = await win.webContents.executeJavaScript(`

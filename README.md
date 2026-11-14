@@ -1,12 +1,18 @@
 # Dolowcool
 
-**Write now. Send when settled.**
+**Write now. Send when settled.** Dolowcool turns live pulse and breathing rate into a transparent, reversible pause before a message leaves the desktop composer.
 
-Dolowcool is a desktop message composer whose email action pauses when camera-estimated pulse or breathing rate rises well above the user's own calm baseline. It unlocks only after a continuous settled hold—or the user can make an explicit, deliberate override.
+![Simulated Dolowcool flow: calibrating, paused, then settled](docs/dolowcool-demo.gif)
+
+```bash
+npm install
+npm test
+npm run start:sim
+```
 
 Built for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04).
 
-![Dolowcool showing a breathing-driven pause](docs/locked.png)
+The GIF is captured from the real Electron UI in simulator mode. It contains no face, camera frames, API key, or readings from a person. The competition demo must use the live SmartSpectra source.
 
 ## Why it is different
 
