@@ -74,6 +74,18 @@ This is the current accepted live result.
 
 A subsequent bounded live-transport run also populated the recipient, subject, and message fields while native capture was active and returned `COMPOSER_RESPONSIVE=true`; it did not open an email client or transmit the fictional message.
 
+## Pre-push full-suite reruns — 2026-11-16
+
+The native transport rerun passed again with a responsive composer:
+
+```text
+RESULT=PASSED MODE=transport STREAM=true COMPOSER_RESPONSIVE=true
+```
+
+Two subsequent strict 90-second metric reruns failed closed rather than accepting weak evidence. The first received SDK validation code `11` for low camera frame rate and produced no metric packets. After releasing every Electron process, the second reached a clear camera state and received both metric types, but pulse confidence peaked below the required 40 threshold; breathing exceeded its required 45 threshold. The app remained paused.
+
+These reruns do not invalidate the earlier strict two-signal pass, but they show that live acquisition is sensitive to the attended camera conditions and that the acceptance test refuses to report success from merely numeric or low-confidence output. No additional trial-credit retries were made. The final video run must be attended, correctly framed, and accepted only when both reliability booleans are true.
+
 ## Reproduce
 
 1. Put the API key in the ignored `.env` file.

@@ -11,10 +11,11 @@ Target: **105 seconds**. Record with `npm start`, which now launches the live Sm
 | 0:17–0:36 | Show the real camera preview with face and upper chest framed. Use a clearly visible jump cut through SDK warm-up, then keep **Live SmartSpectra**, pulse, breathing rate, confidence, and **Both signals reliable** visible while the baseline completes. | “There is no universal calm number here. Dolowcool first requires reliable live pulse and breathing, then learns my own stable session baseline.” |
 | 0:36–0:52 | Type a short annoyed message that contains no real names or addresses. Let a natural rise from brief, safe movement before sitting down appear in the readings. | “I can write immediately. As the relative score crosses the visible 1.0 threshold, email and copy pause.” |
 | 0:52–1:05 | Hold on the paused state and **Why is this paused?** panel. Show baseline, current values, driving signal, threshold, and unavailable actions. | “This is not emotion detection. The panel shows exactly which reading changed relative to my baseline and why the action is paused.” |
-| 1:05–1:22 | Sit comfortably, stay still, and breathe slowly and comfortably. Keep the lower 0.5 threshold, signal-integrity rule, and eight-second continuous countdown visible. | “The action does not return on one low sample. The score must stay below the lower threshold continuously. A gap, missing metric, or low-confidence reading resets the timer—it never fails open.” |
-| 1:22–1:32 | Show **Settled. Your choice is open**, then the enabled email and copy actions. Do not use the override in the main take. | “After the continuous hold, the choice returns. Nothing sends automatically; I still review in my email app.” |
-| 1:32–1:40 | Press **Stop camera & end session**. Show the memory-only recap timeline and “You waited … seconds.” | “The recap shows the relative-score timeline and pause markers. It is not saved and disappears when I leave this screen.” |
-| 1:40–1:45 | Show the public repository README, hero GIF, SmartSpectra source file, tests, and consent document. | “The public repo shows the real SDK integration, tests, setup, and exact data-handling notes.” |
+| 1:05–1:13 | While paused, briefly lean outside the valid framing guide. Show the quality warning and that message actions stay paused. Return fully into frame. | “Here is the guardrail: missing or unreliable data is never interpreted as calm. It preserves the pause and resets recovery.” |
+| 1:13–1:27 | Sit comfortably, stay still, and breathe normally. Keep the lower 0.5 threshold, signal-integrity rule, and eight-second continuous countdown visible. | “The action does not return on one low sample. The score must stay below the lower threshold continuously.” |
+| 1:27–1:35 | Show **Settled. Your choice is open**, then the enabled email and copy actions. Do not use the override in the main take. | “After the continuous hold, the choice returns. Nothing sends automatically; I still review in my email app.” |
+| 1:35–1:41 | Press **Stop camera & end session**. Show the memory-only recap timeline and “You waited … seconds.” | “The recap is memory-only and disappears when I leave this screen.” |
+| 1:41–1:45 | Show the public repository README, SmartSpectra source, tests, and audit. | “The public repo shows the live integration, failed probes, fixes, and reproduction commands.” |
 
 ## Recording checklist
 
@@ -30,6 +31,7 @@ Target: **105 seconds**. Record with `npm start`, which now launches the live Sm
 - [ ] Record at 1080p or higher, 30 fps, with the app text readable and system audio disabled unless needed.
 - [ ] Capture clean voiceover with a quiet room or separate microphone.
 - [ ] Show consent, baseline, annoyed draft, pause, explanation, slow comfortable breathing, countdown, settled unlock, recap, and the repo.
+- [ ] Demonstrate the fail-closed guardrail by briefly losing valid framing while paused, then return to frame before the recovery hold.
 - [ ] Do not demonstrate the override in the main take; the README and UI disclose it.
 - [ ] Keep the final five seconds on the public repo and SmartSpectra integration evidence.
 - [ ] Review the exported video frame by frame for secrets, faces in reflections, notifications, physiological values outside the intended app UI, and personal data.

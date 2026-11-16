@@ -1,64 +1,114 @@
-# Dolowcool
+# Dolowcool — a missing body signal can never be mistaken for calm
 
-**Write now. Send when settled.** Dolowcool turns live pulse and breathing rate into a transparent, reversible pause before a message leaves the desktop composer.
+**Write now. Send when settled.** Dolowcool is an Electron message composer in which live SmartSpectra pulse and breathing readings create a transparent, reversible pause before an email handoff.
+
+[![CI](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml)
+![Node 20+](https://img.shields.io/badge/Node-20%2B-339933)
+![SmartSpectra 3.5.0](https://img.shields.io/badge/SmartSpectra-3.5.0-6C5CE7)
+![License MIT](https://img.shields.io/badge/license-MIT-blue)
+
+| Judge link | Destination | Status |
+| --- | --- | --- |
+| Challenge | [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04) | Live |
+| Source | [github.com/Agozie180/dolowcool](https://github.com/Agozie180/dolowcool) | Must be made public before submission |
+| Demo video | Public live-camera video | Pending owner recording/upload |
+| DEV submission | [Draft](docs/devto-post.md) | Pending publication |
+| Evidence | [Live test report](LIVE_TEST_REPORT.md) · [Self-audit](AUDIT.md) | Reproducible |
+
+**Event:** Presage SmartSpectra SDK Challenge · **$3,000 total** · ten **$300** winners.
+
+**Category targets:** **Most Creative or Delightful Use** and **Best Thoughtful Real-World Use**. A submission may qualify for both and the overall awards, but can win only once.
+
+> **Load-bearing thesis:** A missing, stale, or unreliable body signal can never be interpreted as calm, and Dolowcool never sends automatically.
+
+The novel interaction is not another vital-sign dashboard. SmartSpectra's live measurements control whether message handoff is available, while the user can keep writing, save locally, inspect the exact rule, stop sensing, or deliberately override. The result is a pause the user can understand and reverse—not an emotion detector or a medical verdict.
 
 ![Simulated Dolowcool flow: calibrating, paused, then settled](docs/dolowcool-demo.gif)
+
+The GIF is captured from the real Electron UI in the permanently labeled simulator. It contains no face, camera frames, API key, or readings from a person. **Competition evidence must use the live SmartSpectra camera source.**
+
+## What we built
+
+Dolowcool is for anyone who wants a moment between composing a charged message and moving it into an email client. It learns a stable baseline from that session, compares both pulse and breathing rate with that personal baseline, pauses handoff on a relative rise, and restores the choice only after an eight-second continuous settled hold.
+
+The idea came from a familiar failure mode: regretting a message after the body had already signaled that it was not a good moment to send. Dolowcool makes that moment visible without claiming to know why the readings changed.
+
+## How it works
+
+```mermaid
+flowchart LR
+    Camera[Camera] --> SDK[SmartSpectra native SDK<br/>main process]
+    SDK --> Merge[Freshness-aware metric merge<br/>pulse + breathing]
+    SDK --> Preview[Throttled processed preview<br/>memory only]
+    Merge --> Gate[Confidence and validation gate]
+    Gate --> Engine[Pure lock engine<br/>baseline + EMA + hysteresis]
+    Engine --> UI[Electron renderer<br/>composer + explanation]
+    UI --> Draft[Local draft<br/>optional]
+    UI --> Mail[Explicit mailto handoff<br/>never automatic]
+```
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant UI as Composer
+    participant S as SmartSpectra
+    participant L as Lock engine
+    participant M as Email client
+    U->>UI: Explicit consent + start
+    UI->>S: Request pulse and breathing
+    S-->>UI: Validation + processed preview
+    S-->>L: Fresh reliable pulse/breath pair
+    L-->>UI: Calibrate personal baseline
+    U->>UI: Type recipient, subject, and message
+    L-->>UI: Relative score crosses 1.0 → pause
+    Note over UI,L: Missing, stale, or unreliable data preserves the pause
+    L-->>UI: Score ≤ 0.5 continuously for 8s → unlock
+    U->>UI: Click Open in email
+    UI->>M: Open reviewed draft via mailto
+```
+
+SmartSpectra can emit pulse and breathing in separate packets. Dolowcool retains each latest reliable measurement for at most eight seconds and combines only fresh values. That removes false “missing metric” oscillation without allowing stale readings to unlock the composer.
+
+## The thesis, enforced—not asserted
+
+| Guarantee | Enforcement | Proof |
+| --- | --- | --- |
+| Missing data is never calm | Either absent metric calls `interrupt()` | `npm test` missing-metric regression |
+| Stale data is never calm | Pair cache expires after 8 seconds; lock engine rejects >2.5-second sample gaps | Unit tests + live source implementation |
+| Low confidence is never calm | Pulse confidence must be ≥40 and breathing confidence ≥45 | Presage validation tests + strict live run |
+| A single low reading cannot unlock | Separate 1.0 lock / 0.5 unlock thresholds plus an 8-second continuous hold | Hysteresis and hold tests |
+| Camera trouble cannot fail open | SDK validation loss resets calibration or calm hold and disables actions | Electron smoke tests |
+| Dolowcool never sends automatically | The only external action is a user-clicked `mailto:` handoff; override requires a 3-second hold | Email-handoff and hold-gate tests |
+
+## What is used—and deliberately not used
+
+| Surface | Decision | Evidence or reason |
+| --- | --- | --- |
+| SmartSpectra native Node camera | **Used deeply** | Native 1280×720/30 capture owns the hot path and avoids renderer IPC frame-copy failure |
+| `PULSE_RATE` | **Used** | Personal baseline, confidence gate, relative score |
+| `BREATHING_RATE` | **Used** | Personal baseline, confidence gate, relative score |
+| SDK validation states | **Used** | No face, framing, lighting, motion, and frame-rate states become actionable UI guidance |
+| Processed preview | **Used** | Throttled, memory-only preview helps frame face and upper chest |
+| SmartSpectra telemetry | **Off by default** | Explicit `enableTelemetry: false`; opt-in only with `DOLOWCOOL_TELEMETRY=1` |
+| HRV and facial expression | **Not requested** | They are unnecessary for the thesis and would widen the privacy/interpretation surface |
+| Optional AI service | **Not used** | No rewrite model, emotion inference, or third-party message processing |
+| Gmail/Outlook API | **Not used** | `mailto:` keeps authentication and automatic sending out of scope |
+| Simulator | **Developer fallback only** | Exercises the same UI and lock engine, but is visibly labeled and is never presented as live proof |
+
+## Live experience
+
+Requirements:
+
+- Node.js 20 or newer
+- Windows x64, macOS Apple Silicon, or Linux x64/ARM64; Linux needs glibc 2.35+
+- A SmartSpectra API key
+- A camera view containing the face, shoulders, and upper chest with soft front lighting
 
 ```bash
 npm install
 npm test
 npm start
 ```
-
-`npm start` is the live SmartSpectra experience and requires `SMARTSPECTRA_API_KEY` in the environment or ignored `.env` file. The simulator is an explicitly labeled developer fallback, not the competition experience.
-
-Built for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04).
-
-[![CI](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml)
-
-The GIF is captured from the real Electron UI in simulator mode. It contains no face, camera frames, API key, or readings from a person. The competition demo must use the live SmartSpectra source.
-
-## Why it is different
-
-- **The live signal controls the core interaction.** Pulse and breathing rate directly determine whether the message action is available.
-- **Personal, not population-based.** Dolowcool learns a stable baseline for each session instead of applying a universal “calm” number.
-- **Continuous means continuous.** Lost samples reset the calm hold; a signal gap can never silently unlock the action.
-- **Reliability is part of the rule.** Both pulse and breathing must meet SmartSpectra's documented reliability verdicts; missing or low-confidence data keeps actions paused.
-- **User agency remains intact.** A clearly disclosed override requires a continuous three-second press-and-hold, and nothing is sent automatically.
-- **The data boundaries are visible before sensing starts.** Dolowcool stores no frames or physiological readings, and it explicitly disables optional SmartSpectra telemetry unless the app owner enables it.
-
-## Experience
-
-1. The user explicitly consents before the camera starts.
-2. A live preview and framing guide help establish a clear signal.
-3. Dolowcool waits for reliable pulse and breathing, then learns a stable, continuous personal baseline.
-4. The user writes while pulse and breathing remain visible.
-5. A relative-arousal score uses the stronger rise of pulse or breathing rate.
-6. If the score crosses the threshold, email and copy actions pause, and **Why is this paused?** exposes every input and rule.
-7. The actions return only after readings remain below the lower threshold for eight continuous seconds.
-8. Ending the session shows a memory-only relative-score timeline with pause and unlock markers.
-9. The user reviews the message in their default email app; Dolowcool never sends automatically.
-
-## Developer fallback: simulated signals
-
-No camera, API key, or trial credits are needed.
-
-```bash
-npm install
-npm run start:sim
-```
-
-Press **Run demo scenario** for a permanently labeled, approximately 60-second simulated tour of baseline, rise, pause, settling, and unlock. Or control the same lock engine manually with the slider.
-
-## Run with SmartSpectra
-
-Requirements:
-
-- Node.js 20 or newer
-- Windows x64, macOS Apple Silicon, or Linux x64/ARM64. Linux requires glibc 2.35 or newer (for example Ubuntu 22.04+ or Debian 12+).
-- A SmartSpectra API key
-
-This platform matrix is the one published for `@smartspectra/node-sdk` 3.5.0 in Presage's [Node.js and Electron SDK documentation](https://smartspectra.presagetech.com/docs/nodejs).
 
 PowerShell:
 
@@ -67,81 +117,106 @@ $env:SMARTSPECTRA_API_KEY='your_key'
 npm start
 ```
 
-Alternatively, copy `.env.example` to `.env`, paste the key after `SMARTSPECTRA_API_KEY=`, and run `npm start`. The `.env` file is ignored by Git.
+Or copy `.env.example` to the ignored `.env` file. The API key remains in Electron's main process and is never exposed to the renderer. Set `DOLOWCOOL_CAMERA_ID` only to select a non-default camera.
 
-SmartSpectra's first discovered camera is used by default. Set `DOLOWCOOL_CAMERA_ID` only when a machine has multiple cameras and a specific device is required.
+Experience flow:
 
-macOS/Linux:
+1. Explicitly consent before the camera starts.
+2. Keep writing while the preview and live metrics remain visible.
+3. Wait for both signals to become reliable and for the stable personal baseline to complete.
+4. Inspect **Why is this paused?** if the relative score crosses the threshold.
+5. Wait for the continuous settled hold, save the draft, or use the disclosed three-second override.
+6. Review the draft in the default email app. Dolowcool never sends it.
+7. End the session to release the camera and view a memory-only recap.
+
+## Try the UX without a camera
 
 ```bash
-SMARTSPECTRA_API_KEY=your_key npm start
+npm install
+npm run start:sim
 ```
 
-The app uses SmartSpectra's native Node camera path in Electron's main process at 1280×720/30 fps. This avoids copying every raw camera frame from the renderer to the main process, which could not sustain SmartSpectra's required frame rate on the test machine. A throttled, memory-only processed preview is sent to the renderer for framing; frames are never written to disk. Only `BREATHING_RATE` and `PULSE_RATE` are requested, avoiding unrelated models and trial usage. SmartSpectra may deliver those measurements in separate packets, so Dolowcool merges the latest fresh pulse and breathing points with an eight-second expiration instead of incorrectly treating each packet as a complete pair. Both readings must meet SmartSpectra's documented stable-confidence standards—pulse confidence 40 or higher and breathing confidence 45 or higher—before calibration or unlocking can progress. The API key stays in the main process and is never exposed to the renderer.
+Press **Run demo scenario** for a permanently labeled, approximately 60-second tour. This proves UI behavior—not live SDK behavior.
+
+## Measured evidence
+
+| Claim | Measured result | Reproduce |
+| --- | --- | --- |
+| Core behavior | 16 automated unit tests pass | `npm test` |
+| Electron product flow | Consent, composer, pause, explanation, override UI, unlock, draft deletion, recap pass | `npm run test:smoke` |
+| Presage configuration | Missing-key and validation guidance pass without consuming live credits | `npm run test:presage-smoke` |
+| Native live path | Stream, preview, pulse, breathing, and both reliability verdicts passed | `npm run test:live` while correctly framed |
+| Composer during sensing | Recipient, subject, and message remained responsive during native capture | `npm run test:live-transport` |
+| Dependency audit | 0 known vulnerabilities at the last full verification | `npm audit` |
+
+The accepted redacted live result is:
+
+```text
+RESULT=PASSED MODE=metrics STREAM=true PULSE_RECEIVED=true BREATH_RECEIVED=true PULSE_RELIABLE=true BREATH_RELIABLE=true QUALITY=Both signals reliable
+```
+
+See [LIVE_TEST_REPORT.md](LIVE_TEST_REPORT.md) for the hardware, failures that preceded this result, and the exact acceptance rule. No camera frame, key, or physiological value is stored in the report.
 
 ## Verification
 
 ```bash
 npm test
+npm run build
 npm run test:smoke
 npm run test:presage-smoke
+npm run test:live-transport
 npm audit
 ```
 
-To verify the complete email-client handoff without opening a mail client or sending anything:
+`npm run test:live` is an attended, telemetry-off, 90-second acceptance test. It passes only after both requested metrics meet the reliability thresholds. Sit naturally; do not force rapid breathing.
+
+To test the complete handoff without opening a mail client or sending anything:
 
 ```powershell
 $env:DOLOWCOOL_TEST_RECIPIENT='recipient@example.com'
 npm run test:email-handoff
 ```
 
-With a key in `.env`, `npm run test:live` performs one bounded, telemetry-off test of the real Electron camera and SmartSpectra native pipeline, allowing up to 90 seconds for both metrics to meet the SDK reliability thresholds before it stops automatically.
+## Architecture map
 
-`npm run test:live-transport` performs a shorter acceptance check for native camera capture, SDK validation, and the in-app preview without waiting for vital-sign output.
+- `sources/presage.js` — native SmartSpectra capture, metric freshness merge, confidence thresholds, and validation coaching.
+- `renderer/lock.js` — pure personal-baseline, smoothing, hysteresis, continuous-hold, and fail-closed state engine.
+- `renderer/renderer.js` — consent, memory-only preview, composer, explanations, accessibility announcements, recap, and deliberate override.
+- `renderer/demo-scenario.js`, `session-recap.js`, `hold-confirm.js` — independently tested behavior modules.
+- `main.js` — secured window, source lifecycle, narrow IPC surface, and explicit `mailto:` handoff.
+- `sources/sim.js` — clearly labeled camera-free development source.
 
-For a valid pulse-and-breathing run, sit far enough from the camera for both your face and upper chest to be visible with soft front lighting. The test records only pass/fail booleans and SDK status codes; it does not save frames, API keys, or physiological values. See [LIVE_TEST_REPORT.md](LIVE_TEST_REPORT.md) for the latest redacted hardware run.
+## Limitations, stated plainly
 
-The tests cover:
+- Camera estimates depend on lighting, framing, stillness, skin visibility, camera hardware, and SmartSpectra's averaging windows. Acquisition is not instantaneous.
+- Pulse and breathing may update at different times. Dolowcool's eight-second merge window is an engineering freshness rule, not a medical standard.
+- The 15% pulse reference, 30% breathing reference, 1.0/0.5 hysteresis thresholds, and eight-second hold are interaction-design starting points. They are not clinically validated.
+- The app does not know whether a rise came from emotion, exercise, caffeine, movement, or anything else. It does not label the cause.
+- Deliberate override preserves user agency, so Dolowcool is a speed bump—not an enforcement or safety guarantee.
+- The composer opens a draft through the operating system's `mailto:` handler. It does not verify delivery and never sends automatically.
+- The app is a desktop prototype, not a signed/packaged consumer release. Judges run it from source.
+- The simulator is useful for deterministic review but is not evidence of SmartSpectra integration.
+- The public live-camera video, published DEV post, and public repository are still mandatory submission blockers.
 
-- stable personal-baseline calibration;
-- threshold smoothing and hysteresis;
-- continuous calm-hold unlocking;
-- prevention of false unlocks after gaps, missing metrics, or low-confidence readings;
-- all documented SmartSpectra validation-state coaching;
-- the three-second override hold and early-release cancellation;
-- memory-only recap timing and markers;
-- the Electron consent, judge-mode, draft, accessibility-announcement, and stop-session flow.
+## Consent, privacy, and disclosures
 
-## Architecture
+- Sensing begins only after an unchecked consent box is selected and **Start live camera session** is clicked. **Stop camera & end session** releases the camera; another session requires fresh consent.
+- Presage states that metric computation runs on-device. Its backend is still contacted for API-key authentication and subscription validation.
+- Dolowcool writes no frames, physiological readings, baseline, relative score, or recap to disk. The optional local draft is the only persisted app content and can be deleted in the UI.
+- Optional SmartSpectra telemetry is disabled by default. Authentication/subscription traffic still occurs, and Presage does not publish every applicable retention period.
+- The app uses no optional AI service, performs no emotion inference, and makes no diagnosis, treatment recommendation, or medical decision.
+- Nothing is sent automatically. Opening email, copying text, saving a draft, overriding, and stopping are explicit user actions.
 
-- `renderer/lock.js` — pure, tested baseline and state engine.
-- `renderer/renderer.js` — memory-only camera preview, experience state, explanations, recap rendering, draft handling, email handoff, and deliberate override.
-- `renderer/demo-scenario.js`, `session-recap.js`, `hold-confirm.js` — small independently tested behavior modules.
-- `sources/presage.js` — native SmartSpectra camera capture, validation feedback, and metric decoding.
-- `sources/sim.js` — camera-free signal simulator.
-- `main.js` — window security, source lifecycle, narrow renderer IPC, and safe `mailto:` handoff.
+Read the claim-by-claim data analysis and unresolved vendor questions in [docs/consent-and-data.md](docs/consent-and-data.md).
 
-## Consent and data handling
+## Submission assets
 
-- Camera-based sensing starts only after an unchecked consent box is selected and **Start live camera session** is clicked. **Stop camera & end session** releases the camera; a new session requires consent again.
-- Presage states that SmartSpectra metric computation runs on-device and its backend is contacted to authenticate the API key and validate the subscription. Camera frames are therefore not uploaded for metric computation. [Official SmartSpectra documentation index](https://smartspectra.presagetech.com/llms.txt)
-- Dolowcool stores no frames, physiological readings, baseline, relative-arousal score, or recap on disk. Those values stay in memory for the session. Optional message drafts are stored in local `localStorage` and can be removed with **Discard local draft**.
-- SmartSpectra telemetry defaults to on in the SDK. Dolowcool explicitly sets `enableTelemetry: false` unless the app owner sets `DOLOWCOOL_TELEMETRY=1`. Presage says disabled telemetry starts no telemetry session and transmits no telemetry. Authentication and subscription validation still occur. [SDK Telemetry & Privacy](https://smartspectra.presagetech.com/docs/telemetry-and-privacy)
-- When enabled, telemetry contains SDK/device/runtime details, session shape, performance counts, validation-state counts, coarse failure information, and timestamps. Device-readiness reports can also contain camera configuration, thresholds, diagnostic messages, paths, and platform errors. Presage says telemetry excludes raw frames and measured physiological values.
-- Telemetry uses account and device-authentication headers, so requests can be associated with an account and are not anonymous. Full readiness reports and access logs currently have no automatic expiration. Presage does not state a fixed retention period for session summaries or authentication/subscription-validation records on these pages.
-- Presage's broader Privacy Policy says personal information is retained as long as necessary, includes biometric/vital-sign language, and provides deletion requests through `support@presagetech.com`. It does not state how those broad clauses apply to a telemetry-off Node session. [Presage Privacy Policy](https://api.physiology.presagetech.com/privacypolicy)
-- The API key is loaded from `SMARTSPECTRA_API_KEY` only in Electron's main process. It is never exposed to the renderer or written to app storage.
-- Dolowcool uses no optional AI service and makes no diagnosis, treatment recommendation, emotion inference, or medical decision.
-
-The full claim-by-claim explanation and open questions are in [docs/consent-and-data.md](docs/consent-and-data.md).
+- [Self-audit and regression receipts](AUDIT.md)
+- [90–120 second live demo script](docs/demo-script.md)
+- [DEV post draft](docs/devto-post.md)
+- [Submission checklist](docs/submission-checklist.md)
+- [Consent and data notes](docs/consent-and-data.md)
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
-## Submission working files
-
-- [DEV post draft](docs/devto-post.md)
-- [90–120 second demo script](docs/demo-script.md)
-- [Submission checklist](docs/submission-checklist.md)
-- [Detailed consent and data notes](docs/consent-and-data.md)
