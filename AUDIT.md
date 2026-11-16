@@ -55,10 +55,21 @@ This receipt establishes one successful attended hardware configuration. It is n
 7. **Vendor privacy gaps:** Presage does not publish every retention/detail answer for telemetry-off authentication and subscription checks.
 8. **Submission blockers:** the repository must be public and a real-camera video and DEV post must be published before judging.
 
+## Structured SmartSpectra feedback
+
+These are reproducible integration findings worth sharing with Presage after the submission. They are observations, not claims that the SDK is defective:
+
+- Pulse and breathing may arrive in separate metric packets, so consumers need a documented freshness/merge strategy.
+- On the tested HP camera, an exposure-lock attempt caused a luminance collapse; the SDK correctly reverted to automatic exposure because the driver exposed no working AE lock or gain control.
+- A processed preview may carry an unused zero alpha channel; renderers should force opaque alpha when converting RGBA/BGRA buffers.
+- Numeric metric output is not sufficient acceptance evidence; applications should use the documented confidence thresholds and validation states.
+- Validation code `11` can occur even after native transport previously passed, so bounded live tests should preserve exact diagnostics and fail closed.
+
 ## Full regression commands
 
 ```bash
 npm test
+npm run test:coverage
 npm run build
 npm run test:smoke
 npm run test:presage-smoke

@@ -3,6 +3,7 @@
 **Write now. Send when settled.** Dolowcool is an Electron message composer in which live SmartSpectra pulse and breathing readings create a transparent, reversible pause before an email handoff.
 
 [![CI](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml)
+![Measured unit line coverage 73.79%](https://img.shields.io/badge/unit%20line%20coverage-73.79%25-2E8B57)
 ![Node 20+](https://img.shields.io/badge/Node-20%2B-339933)
 ![SmartSpectra 3.5.0](https://img.shields.io/badge/SmartSpectra-3.5.0-6C5CE7)
 ![License MIT](https://img.shields.io/badge/license-MIT-blue)
@@ -14,10 +15,17 @@
 | Demo video | Public live-camera video | Pending owner recording/upload |
 | DEV submission | [Draft](docs/devto-post.md) | Pending publication |
 | Evidence | [Live test report](LIVE_TEST_REPORT.md) · [Self-audit](AUDIT.md) | Reproducible |
+| Pitch deck / litepaper | README + DEV post are the judge packet | Not required by this challenge |
 
 **Event:** Presage SmartSpectra SDK Challenge · **$3,000 total** · ten **$300** winners.
 
 **Category targets:** **Most Creative or Delightful Use** and **Best Thoughtful Real-World Use**. A submission may qualify for both and the overall awards, but can win only once.
+
+| Judging criterion | Dolowcool's protected scoring feature |
+| --- | --- |
+| Use of underlying technology | Real native SmartSpectra capture; pulse and breathing jointly control the core interaction |
+| Usability and UX | Consent-first framing, actionable quality coaching, explainable pause, continuous recovery, and deliberate override |
+| Originality and creativity | Body-relative signals become a reversible message-handoff state rather than another readings dashboard |
 
 > **Load-bearing thesis:** A missing, stale, or unreliable body signal can never be interpreted as calm, and Dolowcool never sends automatically.
 
@@ -138,11 +146,14 @@ npm run start:sim
 
 Press **Run demo scenario** for a permanently labeled, approximately 60-second tour. This proves UI behavior—not live SDK behavior.
 
+Judge path: consent, press **Run demo scenario**, type a fictional recipient/subject/message, open **Why is this paused?**, watch the continuous recovery hold, then stop the session to see the memory-only recap.
+
 ## Measured evidence
 
 | Claim | Measured result | Reproduce |
 | --- | --- | --- |
 | Core behavior | 16 automated unit tests pass | `npm test` |
+| Imported unit scope | 73.79% lines, 83.11% branches, 91.30% functions; lock engine 97.66% lines | `npm run test:coverage` |
 | Electron product flow | Consent, composer, pause, explanation, override UI, unlock, draft deletion, recap pass | `npm run test:smoke` |
 | Presage configuration | Missing-key and validation guidance pass without consuming live credits | `npm run test:presage-smoke` |
 | Native live path | Stream, preview, pulse, breathing, and both reliability verdicts passed | `npm run test:live` while correctly framed |
@@ -161,6 +172,7 @@ See [LIVE_TEST_REPORT.md](LIVE_TEST_REPORT.md) for the hardware, failures that p
 
 ```bash
 npm test
+npm run test:coverage
 npm run build
 npm run test:smoke
 npm run test:presage-smoke
@@ -216,6 +228,8 @@ Read the claim-by-claim data analysis and unresolved vendor questions in [docs/c
 - [DEV post draft](docs/devto-post.md)
 - [Submission checklist](docs/submission-checklist.md)
 - [Consent and data notes](docs/consent-and-data.md)
+- [Security policy](SECURITY.md)
+- [Release history](CHANGELOG.md)
 
 ## License
 

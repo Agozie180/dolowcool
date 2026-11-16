@@ -2,6 +2,14 @@
   "name": "dolowcool",
   "version": "0.2.0",
   "description": "A desktop message composer that pauses email actions based on live pulse and breathing relative to a personal baseline.",
+  "homepage": "https://github.com/Agozie180/dolowcool#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Agozie180/dolowcool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Agozie180/dolowcool/issues"
+  },
   "license": "MIT",
   "author": "Agozie180",
   "engines": {
@@ -22,6 +30,7 @@
     "start:sim": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron .",
     "start:presage": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron .",
     "test": "node --test test/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=70 test/*.test.js",
     "test:smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/electron-smoke.js",
     "test:email-handoff": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron scripts/email-handoff-smoke.js",
     "test:presage-smoke": "npm run build && cross-env DOLOWCOOL_SOURCE=presage SMARTSPECTRA_API_KEY= electron scripts/presage-smoke.js",

@@ -30,6 +30,7 @@ Target: **105 seconds**. Record with `npm start`, which now launches the live Sm
 - [ ] Hide desktop notifications and close password managers, chat apps, and private browser tabs.
 - [ ] Record at 1080p or higher, 30 fps, with the app text readable and system audio disabled unless needed.
 - [ ] Capture clean voiceover with a quiet room or separate microphone.
+- [ ] Record at least three complete takes; choose the clearest honest take rather than splicing simulated evidence into the live flow.
 - [ ] Show consent, baseline, annoyed draft, pause, explanation, slow comfortable breathing, countdown, settled unlock, recap, and the repo.
 - [ ] Demonstrate the fail-closed guardrail by briefly losing valid framing while paused, then return to frame before the recovery hold.
 - [ ] Do not demonstrate the override in the main take; the README and UI disclose it.
