@@ -44,6 +44,37 @@ test('a signal gap cannot count as a continuous calm hold', () => {
   assert.equal(engine.state, 'unlocked');
 });
 
+test('a missing metric can never count toward unlocking', () => {
+  const { engine, tick } = harness({ smoothing: 1 });
+  for (let i = 0; i < 11; i++) tick(70, 14);
+  tick(70, 28);
+  assert.equal(engine.state, 'locked');
+
+  for (let i = 0; i < 20; i++) tick(70, null);
+  assert.equal(engine.state, 'locked');
+  assert.equal(engine.calmSince, null);
+});
+
+test('an unreliable metric resets the calm hold', () => {
+  const { engine, tick } = harness({ baselineSeconds: 5, smoothing: 1 });
+  for (let i = 0; i < 6; i++) tick(70, 14);
+  assert.equal(engine.state, 'unlocked');
+  tick(100, 24);
+  tick(70, 14);
+  assert.equal(engine.state, 'locked');
+
+  const unreliable = engine.push({
+    t: engine.lastT + 1000,
+    pulse: 70,
+    breath: 14,
+    pulseStable: true,
+    breathStable: false,
+  });
+  assert.equal(unreliable.state, 'locked');
+  assert.equal(unreliable.signalGap, true);
+  assert.equal(unreliable.calmLeft, null);
+});
+
 test('calibration waits for stable readings', () => {
   const { engine, tick } = harness({ baselineSeconds: 5, pulseMadLimit: 0.01, breathMadLimit: 0.01 });
   for (let i = 0; i < 7; i++) tick(i % 2 ? 90 : 60, i % 2 ? 20 : 10);

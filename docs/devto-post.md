@@ -4,7 +4,7 @@ Tags: `devchallenge, presagechallenge`
 
 I built Dolowcool, an Electron desktop message composer that adds a pause between writing a message and moving it into an email client.
 
-The user can write immediately. During a camera session, Dolowcool compares SmartSpectra pulse and breathing-rate readings with that user's own baseline for the current session. If either reading rises far enough above the baseline, the email and copy actions pause. They return only after the relative score stays below a lower threshold for one continuous hold.
+The user can write immediately. During a live camera session, Dolowcool compares reliable SmartSpectra pulse and breathing-rate readings with that user's own baseline for the current session. If either reading rises far enough above the baseline, the email and copy actions pause. They return only after the relative score stays below a lower threshold for one continuous hold.
 
 I wanted the behavior to be understandable without asking the user to interpret a biometric dashboard. The interface says which signal is driving the pause, shows the baseline and current values, exposes the thresholds and countdown, and keeps **Save draft** available. Nothing sends automatically. A visible override remains available, but it requires a continuous three-second press-and-hold.
 
@@ -20,11 +20,13 @@ The final video uses the real SmartSpectra source with live pulse and breathing 
 
 Repository: https://github.com/Agozie180/dolowcool
 
-The README includes the three-command simulator path, live SmartSpectra setup, supported platforms, architecture, tests, and an exact consent/data-handling explanation.
+The README opens with the live SmartSpectra path and also includes an explicitly labeled camera-free developer fallback, supported platforms, architecture, tests, and an exact consent/data-handling explanation.
 
 # How It Responds to Human Signals
 
-Dolowcool requests only SmartSpectra's `PULSE_RATE` and `BREATHING_RATE` metrics. The SmartSpectra source owns the native camera and SDK in Electron's main process; the API key never enters the renderer. A throttled, memory-only processed preview goes to the renderer for framing.
+Dolowcool requests only SmartSpectra's `PULSE_RATE` and `BREATHING_RATE` metrics. The SmartSpectra source owns the native camera and SDK in Electron's main process; the API key never enters the renderer. A throttled, memory-only processed preview goes to the renderer for framing. Pulse must meet SmartSpectra's documented confidence threshold of 40 and breathing must meet 45; both reliable signals are required before calibration or unlocking progresses.
+
+One live bug was especially instructive: pulse and breathing can arrive in different SDK metric packets. Treating each packet as a complete pair made the UI alternate between “pulse missing” and “breathing missing.” Dolowcool now merges independently arriving measurements only while each remains fresh, expiring either after eight seconds. That preserves the fail-closed rule without asking the user to force rapid breathing.
 
 That architecture came from a failed first approach. I initially copied 1280×720 camera frames from the renderer to the main process. On my test machine, that path could not sustain the SDK's required frame rate and ended with a sustained-low-frame-rate error. A temporary lower-resolution path proved that frame transport was the bottleneck, so I moved capture into SmartSpectra's native main-process camera path. The full live acceptance test then received both pulse and breathing output.
 
@@ -35,7 +37,7 @@ After a stable, continuous baseline is available, Dolowcool calculates two relat
 
 It takes the larger value and smooths it with an exponential moving average. A score of 1.0 activates the pause. Unlocking uses hysteresis: the score must fall to 0.5 or lower and stay there for eight continuous seconds. These values are interaction-design starting points, not medically validated thresholds.
 
-The lost-sample rule is intentionally strict: **a signal gap can never silently unlock**. A gap activates or preserves the pause, resets the calm hold, and requires a fresh continuous signal. SmartSpectra validation states such as no face found, poor framing, darkness, brightness, low frame rate, and motion are mapped to specific on-screen guidance. Missing or invalid data never counts as settled data.
+The signal-integrity rule is intentionally strict: **a gap, missing metric, or low-confidence reading can never silently unlock**. Any of those conditions activates or preserves the pause, resets the calm hold, and requires a fresh continuous reliable signal. SmartSpectra validation states such as no face found, poor framing, darkness, brightness, low frame rate, and motion are mapped to specific on-screen guidance.
 
 For a camera-free review, the simulator has a permanently labeled **Simulated** judge mode. **Run demo scenario** plays baseline, rise, pause, settling, and unlock in about 60 seconds through the same lock engine used by the live source.
 
@@ -49,7 +51,7 @@ Current limitations: measurements depend on lighting, framing, stillness, and th
 
 # Consent and Data Handling
 
-The camera starts only after the user selects an unchecked consent box that explains the data flow and presses **Begin session**. A visible **Stop camera & end session** control releases the camera, and a new session requires consent again.
+The camera starts only after the user selects an unchecked consent box that explains the data flow and presses **Start live camera session**. A visible **Stop camera & end session** control releases the camera, and a new session requires consent again.
 
 Presage's official documentation says all SmartSpectra metric computation runs on-device and that its backend is contacted to authenticate the API key and validate the subscription. That official statement refutes a third-party claim that camera frames are uploaded for metric computation. Source: [SmartSpectra documentation index](https://smartspectra.presagetech.com/llms.txt).
 

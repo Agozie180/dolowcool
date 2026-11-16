@@ -4,7 +4,7 @@ Last verified against Presage's official pages on 2026-11-14.
 
 ## Before the camera starts
 
-Dolowcool does not start camera-based sensing until the user selects an unchecked consent box and presses **Begin session**. The app keeps a visible **Stop camera & end session** control available during sensing. Starting a new session requires consent again.
+Dolowcool does not start camera-based sensing until the user selects an unchecked consent box and presses **Start live camera session**. The app keeps a visible **Stop camera & end session** control available during sensing. Starting a new session requires consent again.
 
 Dolowcool uses pulse and breathing rate only to calculate arousal relative to the user's own session baseline. It does not infer emotions, diagnose a condition, recommend treatment, or make a medical decision.
 

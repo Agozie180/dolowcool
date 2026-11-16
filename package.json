@@ -18,7 +18,7 @@
   "scripts": {
     "build": "npm run build:preload",
     "build:preload": "esbuild preload.js --bundle --outfile=dist/preload.js --platform=node --format=cjs --external:electron --log-level=warning",
-    "start": "npm run build && electron .",
+    "start": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron .",
     "start:sim": "npm run build && cross-env DOLOWCOOL_SOURCE=sim electron .",
     "start:presage": "npm run build && cross-env DOLOWCOOL_SOURCE=presage electron .",
     "test": "node --test test/*.test.js",

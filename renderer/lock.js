@@ -41,6 +41,20 @@
       this.lastBreakdown = { pulse: 0, breath: 0, driver: null };
     }
 
+    interrupt(t = Date.now(), reason = 'Signal interrupted. Both reliable readings are required.') {
+      if (this.state === 'calibrating') {
+        this.samples = [];
+        this.startT = t;
+        this.calibrationReason = reason;
+      } else {
+        this.state = 'locked';
+        this.calmSince = null;
+        this.ema = null;
+      }
+      this.lastT = t;
+      return this.snapshot(t, true);
+    }
+
     push(input) {
       const c = this.cfg;
       const t = Number.isFinite(input?.t) ? input.t : Date.now();
@@ -51,6 +65,14 @@
       };
       const gap = this.lastT === null ? 0 : t - this.lastT;
       const interrupted = this.lastT !== null && (gap <= 0 || gap > c.maxSampleGapMs);
+      const bothMetricsPresent = sample.pulse !== null && sample.breath !== null;
+      const bothMetricsReliable = input?.pulseStable !== false && input?.breathStable !== false;
+
+      if (!bothMetricsPresent || !bothMetricsReliable) {
+        return this.interrupt(t, !bothMetricsPresent
+          ? 'Waiting for both pulse and breathing readings. Building a fresh continuous baseline…'
+          : 'Signal confidence dropped. Building a fresh continuous baseline…');
+      }
 
       if (this.state === 'calibrating') {
         if (this.startT === null || interrupted) {

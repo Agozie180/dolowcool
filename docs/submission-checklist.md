@@ -3,13 +3,13 @@
 ## Public repository
 
 - [ ] Repository is public: https://github.com/Agozie180/dolowcool
-- [ ] README opens with the one-line explanation, simulator GIF, and three-command quickstart.
-- [ ] README includes live SmartSpectra setup, supported platforms, architecture, verification commands, limitations, consent, and data handling.
-- [ ] Repository visibly contains the real `@smartspectra/node-sdk` integration and requests pulse plus breathing rate.
-- [ ] No `.env`, API key, camera frame, personal data, or physiological value is committed.
-- [ ] Clean-clone setup has been tested on a supported platform.
-- [ ] `npm test`, `npm run test:smoke`, `npm run test:presage-smoke`, and `npm audit` pass.
-- [ ] One bounded `npm run test:live` run passes with the owner's API key and real camera.
+- [x] README opens with the one-line explanation, simulator GIF disclosure, and three-command live quickstart.
+- [x] README includes live SmartSpectra setup, supported platforms, architecture, verification commands, limitations, consent, and data handling.
+- [x] Repository visibly contains the real `@smartspectra/node-sdk` integration and requests pulse plus breathing rate.
+- [x] No `.env`, API key, camera frame, personal data, or physiological value is committed.
+- [x] Clean-copy `npm ci`, build, unit, Electron, and Presage configuration tests pass on Windows x64.
+- [x] `npm test`, `npm run test:smoke`, `npm run test:presage-smoke`, and `npm audit` pass.
+- [x] One bounded `npm run test:live` run passes with the owner's API key, real camera, both requested metrics, and both SDK reliability verdicts.
 
 ## Demo video
 
@@ -23,15 +23,15 @@
 
 ## DEV post
 
-- [ ] Post uses the challenge template sections: **What I Built**, **Demo**, **Code**, **How It Responds to Human Signals**, **Prize Categories**, **Consent and Data Handling**, **Agent Session**.
+- [x] Post draft uses the challenge template sections: **What I Built**, **Demo**, **Code**, **How It Responds to Human Signals**, **Prize Categories**, **Consent and Data Handling**, **Agent Session**.
 - [ ] Demo placeholder is replaced with the public video URL.
-- [ ] Code section links to the public repository.
-- [ ] Prize Categories targets **Most Creative or Delightful Use** and **Best Thoughtful Real-World Use**, with a specific reason for each.
-- [ ] Consent and Data Handling matches `docs/consent-and-data.md` and links official Presage sources.
-- [ ] Engineering story includes the renderer-to-main frame-copy bottleneck and move to native main-process capture.
-- [ ] Lost-sample rule states that a signal gap can never silently unlock.
-- [ ] Limitations and unvalidated interaction thresholds are disclosed.
-- [ ] Tags are exactly `devchallenge, presagechallenge`.
+- [x] Code section links to the repository URL, which must be made public before publication.
+- [x] Prize Categories targets **Most Creative or Delightful Use** and **Best Thoughtful Real-World Use**, with a specific reason for each.
+- [x] Consent and Data Handling matches `docs/consent-and-data.md` and links official Presage sources.
+- [x] Engineering story includes the renderer-to-main frame-copy bottleneck and move to native main-process capture.
+- [x] Signal-integrity rule states that gaps, missing metrics, and low-confidence readings can never silently unlock.
+- [x] Limitations and unvalidated interaction thresholds are disclosed.
+- [x] Tags are exactly `devchallenge, presagechallenge`.
 - [ ] Post is published before 2026-11-22 11:59 PM PST; target publication date is 2026-11-21.
 
 ## Optional agent session
@@ -43,7 +43,7 @@
 
 ## Owner approval
 
-- [ ] Owner supplies and locally stores the SmartSpectra API key.
+- [x] Owner supplies and locally stores the SmartSpectra API key.
 - [ ] Owner approves the final consent wording and asks Presage the open retention/privacy-policy questions if possible.
 - [ ] Owner records and uploads the real-camera demo video.
 - [ ] Owner reviews and publishes the DEV post.

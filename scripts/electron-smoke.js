@@ -113,12 +113,14 @@ app.whenReady().then(async () => {
         score: document.getElementById('whyScore').textContent,
         pause: document.getElementById('whyPauseThreshold').textContent,
         rule: document.getElementById('whyCalmRule').textContent,
+        integrity: document.getElementById('whyIntegrity').textContent,
         pulseBase: document.getElementById('whyPulseBase').textContent,
         breathBase: document.getElementById('whyBreathBase').textContent
       })`);
       assert.match(whyState.score, /×$/);
       assert.equal(whyState.pause, '1.0×');
       assert.equal(whyState.rule, '≤0.5× for 8s');
+      assert.equal(whyState.integrity, 'both signals reliable');
       assert.match(whyState.pulseBase, /bpm$/);
       assert.match(whyState.breathBase, /br\/min$/);
       const overrideState = await win.webContents.executeJavaScript(`(() => {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; img-src 'self' data: blob:">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; media-src 'self' blob:; worker-src 'self' blob:; img-src 'self' data: blob:">
   <title>Dolowcool</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,7 +12,7 @@
   <header class="topbar">
     <div class="brand"><span class="brand-mark">D</span><span>Dolowcool</span></div>
     <div class="topbar-meta">
-      <span id="sourcePill" class="pill">Simulator · Simulated</span>
+      <span id="sourcePill" class="pill live">Live SmartSpectra · checking</span>
       <span id="privacyPill" class="pill safe"><span class="dot"></span>Telemetry off</span>
     </div>
   </header>
@@ -26,10 +26,11 @@
         <div class="consent-points">
           <div><span>01</span><p><strong>Camera frames are processed on this device.</strong><br>SmartSpectra says its backend is contacted to authenticate the API key and validate the subscription.</p></div>
           <div><span>02</span><p><strong>Dolowcool does not save frames or readings.</strong><br>Pulse, breathing rate, and the session baseline stay in memory until the session ends.</p></div>
-          <div><span>03</span><p><strong>SmartSpectra telemetry is off by default.</strong><br>If enabled by the app owner, it sends authenticated device, session, performance, and quality summaries—not raw frames or physiological values.</p></div>
+          <div><span>03</span><p><strong>Both live signals must be reliable.</strong><br>Missing or low-confidence pulse or breathing data keeps message actions paused and restarts the continuous baseline or settled hold.</p></div>
+          <div><span>04</span><p><strong>SmartSpectra telemetry is off by default.</strong><br>If enabled by the app owner, it sends authenticated device, session, performance, and quality summaries—not raw frames or physiological values.</p></div>
         </div>
         <label class="consent-check"><input type="checkbox" id="agree"><span>I understand this data flow and choose to turn on camera-based sensing.</span></label>
-        <button id="start" class="primary wide" disabled>Begin session <span>→</span></button>
+        <button id="start" class="primary wide" disabled>Start live camera session <span>→</span></button>
         <p id="startErr" class="error" role="alert"></p>
         <p class="fineprint">Wellness and reflection tool only—not a medical device. You can stop at any time.</p>
       </div>
@@ -49,6 +50,8 @@
           </div>
           <div class="camera-stage">
             <canvas id="preview" aria-label="Live camera preview"></canvas>
+            <div id="liveScanBadge" class="live-scan-badge"><span class="dot"></span>On-device live scan</div>
+            <div id="scanLine" class="scan-line" aria-hidden="true"></div>
             <div id="simVisual" class="sim-visual hidden"><div class="sim-orb"></div><p>Camera-free simulator</p></div>
             <div class="face-guide"><span></span></div>
             <div class="camera-shade"></div>
@@ -93,6 +96,7 @@
             <div><dt>Breathing</dt><dd><strong id="whyBreathNow">—</strong> now · <span id="whyBreathBase">—</span> baseline</dd></div>
             <div><dt>Pause rule</dt><dd><strong id="whyScore">0.0×</strong> now · pauses at <span id="whyPauseThreshold">1.0×</span></dd></div>
             <div><dt>Unlock rule</dt><dd><strong id="whyCalmCountdown">not started</strong> · <span id="whyCalmRule">≤0.5× for 8s</span></dd></div>
+            <div class="integrity-rule"><dt>Signal integrity</dt><dd><strong id="whyIntegrity">waiting</strong> · both reliable live metrics are required</dd></div>
           </dl>
         </section>
 

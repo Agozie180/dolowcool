@@ -50,9 +50,33 @@ A single bounded rerun after the competition-hardening changes opened the camera
 
 This unattended result does not replace the earlier attended two-metric pass above, but it also does not re-verify the full live path after the latest UI changes. The owner must perform the final attended run while centered with face and upper chest visible before recording the demo.
 
+## Strict reliability rerun — 2026-11-16
+
+The acceptance test now requires both measurements to meet SmartSpectra's documented stable-confidence standards, not merely to contain numeric values. A bounded telemetry-off run opened the native camera stream and rendered the preview, then correctly failed closed in validation code `7` because the camera could not see enough of the face, shoulders, and upper chest. It produced no metric packets and never calibrated or unlocked.
+
+```text
+RESULT=FAILED STREAM=true VALIDATION_CODE=7 PULSE_RELIABLE=false BREATH_RELIABLE=false
+```
+
+This is an expected safe failure, not a complete acceptance pass. A person must sit farther from the camera and remain in frame for the final attended rerun.
+
+## Successful strict live rerun — 2026-11-16
+
+After fixing cross-packet metric synchronization, the attended telemetry-off run passed while the user remained naturally still and breathed normally. SmartSpectra emitted pulse and breathing in separate packets; Dolowcool now retains each fresh measurement for up to eight seconds so the pair can be evaluated together without treating stale data as current.
+
+The camera driver briefly collapsed image brightness while SmartSpectra attempted exposure lock. The SDK detected the luminance drop and reverted the HP camera to automatic exposure because this hardware exposes neither a working AE lock nor gain control. Dolowcool also now renders processed RGBA/BGRA preview frames as opaque and uses a lighter framing overlay.
+
+```text
+RESULT=PASSED MODE=metrics STREAM=true PULSE_RECEIVED=true BREATH_RECEIVED=true PULSE_RELIABLE=true BREATH_RELIABLE=true QUALITY=Both signals reliable
+```
+
+This is the current accepted live result.
+
+A subsequent bounded live-transport run also populated the recipient, subject, and message fields while native capture was active and returned `COMPOSER_RESPONSIVE=true`; it did not open an email client or transmit the fictional message.
+
 ## Reproduce
 
 1. Put the API key in the ignored `.env` file.
 2. Sit centered with face and upper chest visible.
 3. Run `npm run test:live`.
-4. Accept only `RESULT=PASSED MODE=metrics STREAM=true PULSE_RECEIVED=true BREATH_RECEIVED=true` as a complete pass.
+4. Accept only a result containing `RESULT=PASSED MODE=metrics STREAM=true PULSE_RECEIVED=true BREATH_RECEIVED=true PULSE_RELIABLE=true BREATH_RELIABLE=true` as a complete pass.

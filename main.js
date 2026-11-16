@@ -3,16 +3,23 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const requestedSource = process.env.DOLOWCOOL_SOURCE || 'sim';
-const sourceName = ['sim', 'presage'].includes(requestedSource) ? requestedSource : 'sim';
+// Live SmartSpectra is the product. The simulator remains an explicit developer tool.
+const requestedSource = process.env.DOLOWCOOL_SOURCE || 'presage';
+const sourceName = ['sim', 'presage'].includes(requestedSource) ? requestedSource : 'presage';
 let win = null;
 let source = null;
+
+function sendToRenderer(channel, payload) {
+  if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return;
+  win.webContents.send(channel, payload);
+}
 
 function createWindow() {
   win = new BrowserWindow({
     width: 1180, height: 820, minWidth: 900, minHeight: 680,
     title: 'Dolowcool',
     backgroundColor: '#07100f',
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'dist', 'preload.js'),
       contextIsolation: true,
@@ -20,7 +27,9 @@ function createWindow() {
       sandbox: true,
     },
   });
+  win.setMenuBarVisibility(false);
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', (event) => event.preventDefault());
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
@@ -36,10 +45,10 @@ ipcMain.handle('capture:start', async () => {
     apiKey: process.env.SMARTSPECTRA_API_KEY,
     enableTelemetry: process.env.DOLOWCOOL_TELEMETRY === '1',
   });
-  s.on('sample', (x) => win && win.webContents.send('sample', x));
-  s.on('status', (x) => win && win.webContents.send('source-status', x));
-  s.on('frame', (x) => win && win.webContents.send('camera-frame', x));
-  s.on('error', (e) => win && win.webContents.send('source-error', {
+  s.on('sample', (x) => sendToRenderer('sample', x));
+  s.on('status', (x) => sendToRenderer('source-status', x));
+  s.on('frame', (x) => sendToRenderer('camera-frame', x));
+  s.on('error', (e) => sendToRenderer('source-error', {
     message: String((e && e.message) || e),
     code: e?.code ?? 'unknown',
     retryable: Boolean(e?.retryable),

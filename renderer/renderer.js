@@ -5,8 +5,10 @@ const sessionRecap = new DolowcoolRecap.SessionRecap();
 const overrideGate = new DolowcoolHold.HoldGate(3000);
 
 let active = false;
-let sourceName = 'sim';
+let sourceName = 'presage';
 let qualityOk = false;
+let metricsReliable = false;
+let cameraQualityMessage = 'Waiting for SmartSpectra camera validation.';
 let timedOut = false;
 let lastSampleAt = 0;
 let currentSample = null;
@@ -14,6 +16,7 @@ let currentSnapshot = null;
 let cancelDemoScenario = null;
 let overrideHoldTimer = null;
 let lastAnnouncedState = null;
+let appConfig = null;
 
 const numberText = (value, digits = 0) => Number.isFinite(value) ? Number(value).toFixed(digits) : '—';
 const percentAbove = (value, baseline) => Number.isFinite(value) && Number.isFinite(baseline)
@@ -67,7 +70,7 @@ function cancelOverrideHold(event) {
 }
 
 function updateActionAvailability() {
-  const unlocked = active && qualityOk && !timedOut && currentSnapshot?.state === 'unlocked';
+  const unlocked = active && qualityOk && metricsReliable && !timedOut && currentSnapshot?.state === 'unlocked';
   const hasMessage = composerHasMessage();
   $('send').disabled = !(unlocked && hasMessage);
   $('copy').disabled = !(unlocked && hasMessage);
@@ -78,19 +81,27 @@ function updateActionAvailability() {
   }
 }
 
-function metricMeta(value, baseline, unit) {
+function metricMeta(value, baseline, unit, confidence, stable, simulated = false) {
   if (!Number.isFinite(value)) return 'Waiting for a reading';
-  if (!Number.isFinite(baseline)) return 'Included in your live baseline';
+  const confidenceText = simulated
+    ? 'simulated reading'
+    : (Number.isFinite(confidence) ? `${Math.round(confidence)}% confidence` : 'confidence pending');
+  if (stable === false) return `${confidenceText} · stabilizing`;
+  if (!Number.isFinite(baseline)) return `${confidenceText} · included in your live baseline`;
   const delta = percentAbove(value, baseline);
   const sign = delta > 0 ? '+' : '';
-  return `baseline ${numberText(baseline, unit === 'br/min' ? 1 : 0)} · ${sign}${delta}% now`;
+  return `baseline ${numberText(baseline, unit === 'br/min' ? 1 : 0)} · ${sign}${delta}% now · ${confidenceText}`;
 }
 
 function renderMetrics(sample, snapshot) {
   $('pulseNow').textContent = numberText(sample?.pulse);
   $('breathNow').textContent = numberText(sample?.breath, 1);
-  $('pulseMeta').textContent = metricMeta(sample?.pulse, snapshot?.base?.pulse, 'bpm');
-  $('breathMeta').textContent = metricMeta(sample?.breath, snapshot?.base?.breath, 'br/min');
+  $('pulseMeta').textContent = metricMeta(
+    sample?.pulse, snapshot?.base?.pulse, 'bpm', sample?.pulseConfidence, sample?.pulseStable, sample?.simulated,
+  );
+  $('breathMeta').textContent = metricMeta(
+    sample?.breath, snapshot?.base?.breath, 'br/min', sample?.breathConfidence, sample?.breathStable, sample?.simulated,
+  );
   $('whyPulseNow').textContent = Number.isFinite(sample?.pulse) ? `${numberText(sample.pulse)} bpm` : '—';
   $('whyBreathNow').textContent = Number.isFinite(sample?.breath) ? `${numberText(sample.breath, 1)} br/min` : '—';
   $('whyPulseBase').textContent = Number.isFinite(snapshot?.base?.pulse) ? `${numberText(snapshot.base.pulse)} bpm` : 'learning';
@@ -117,6 +128,7 @@ function renderSnapshot(snapshot) {
   $('whyCalmCountdown').textContent = snapshot.state !== 'locked'
     ? (snapshot.state === 'unlocked' ? 'complete' : 'not started')
     : (snapshot.calmLeft === null ? 'waiting below threshold' : `${snapshot.calmLeft}s remaining`);
+  $('whyIntegrity').textContent = metricsReliable ? 'both signals reliable' : 'pause enforced';
   $('fill').className = snapshot.state === 'locked' ? 'fill hot' : 'fill';
   $('fill').style.width = `${Math.min(snapshot.score / 2, 1) * 100}%`;
   q('.gauge')?.setAttribute('aria-valuenow', String(Math.min(2, snapshot.score)));
@@ -170,6 +182,7 @@ function renderSnapshot(snapshot) {
 }
 
 function showSignalProblem(message) {
+  metricsReliable = false;
   timedOut = true;
   setQuality('bad', 'Signal paused');
   $('status').textContent = 'Signal needs attention';
@@ -193,6 +206,20 @@ function handleStatus(event) {
     );
     if (event.pulsePresent) document.body.dataset.sdkMetricsPulsePresent = 'true';
     if (event.breathPresent) document.body.dataset.sdkMetricsBreathPresent = 'true';
+    document.body.dataset.sdkMetricsPulseReliable = String(Boolean(event.pulseReliable));
+    document.body.dataset.sdkMetricsBreathReliable = String(Boolean(event.breathReliable));
+    if (Number.isFinite(event.pulseConfidence)) {
+      document.body.dataset.sdkPulseConfidence = String(Math.round(event.pulseConfidence));
+      document.body.dataset.sdkPulseConfidenceMax = String(Math.max(
+        Number(document.body.dataset.sdkPulseConfidenceMax || 0), event.pulseConfidence,
+      ));
+    }
+    if (Number.isFinite(event.breathConfidence)) {
+      document.body.dataset.sdkBreathConfidence = String(Math.round(event.breathConfidence));
+      document.body.dataset.sdkBreathConfidenceMax = String(Math.max(
+        Number(document.body.dataset.sdkBreathConfidenceMax || 0), event.breathConfidence,
+      ));
+    }
     return;
   }
   if (event.kind === 'quality') {
@@ -202,16 +229,24 @@ function handleStatus(event) {
       Number(document.body.dataset.sdkValidationCount || 0) + 1,
     );
     qualityOk = Boolean(event.ok);
-    timedOut = true;
+    cameraQualityMessage = event.message || 'Camera signal needs attention.';
     if (qualityOk) {
-      setQuality('good', 'Signal clear');
-      $('cameraHint').textContent = 'Signal is clear. Keep comfortably still.';
+      cameraQualityMessage = 'Camera is clear. Hold still while pulse and breathing confidence build.';
+      setQuality(metricsReliable ? 'good' : 'tuning', metricsReliable
+        ? (sourceName === 'sim' ? 'Simulated signals ready' : 'Both signals reliable')
+        : 'Building confidence');
+      $('cameraHint').textContent = metricsReliable
+        ? 'Both live signals are reliable. Keep comfortably still.'
+        : 'Camera is clear. Hold still while pulse and breathing confidence build.';
     } else {
+      metricsReliable = false;
+      timedOut = true;
       setQuality(event.code === 10 ? 'tuning' : 'bad', event.code === 10 ? 'Tuning' : 'Adjust camera');
-      $('cameraHint').textContent = event.message;
+      const snapshot = engine.interrupt(Date.now(), 'Camera quality changed. Building a fresh continuous baseline…');
+      renderSnapshot(snapshot);
+      $('cameraHint').textContent = cameraQualityMessage;
       $('status').textContent = 'Help the camera get a clear signal';
-      $('explanation').textContent = event.message;
-      if (engine.state === 'calibrating') engine.reset();
+      $('explanation').textContent = cameraQualityMessage;
     }
     updateActionAvailability();
   } else if (!qualityOk && event.message) {
@@ -223,14 +258,46 @@ function handleSample(sample) {
   if (Number.isFinite(sample?.pulse)) document.body.dataset.sdkPulseReceived = 'true';
   if (Number.isFinite(sample?.breath)) document.body.dataset.sdkBreathReceived = 'true';
   lastSampleAt = Date.now();
-  timedOut = false;
   currentSample = sample;
+  const sdkMetricsReliable = Number.isFinite(sample?.pulse)
+    && Number.isFinite(sample?.breath)
+    && sample?.pulseStable !== false
+    && sample?.breathStable !== false;
+  metricsReliable = qualityOk && sdkMetricsReliable;
+  timedOut = !metricsReliable;
   renderMetrics(sample, currentSnapshot);
-  if (!qualityOk) return;
-  const snapshot = engine.push(sample);
+  const snapshot = engine.push(qualityOk ? sample : {
+    ...sample,
+    pulseStable: false,
+    breathStable: false,
+  });
   renderMetrics(sample, snapshot);
   renderSnapshot(snapshot);
   sessionRecap.record(snapshot, sample.t);
+  if (!qualityOk) {
+    $('status').textContent = 'Help the camera get a clear signal';
+    $('explanation').textContent = cameraQualityMessage;
+    $('cameraHint').textContent = cameraQualityMessage;
+  } else if (!metricsReliable) {
+    setQuality('tuning', 'Signal confidence low');
+    const missing = [
+      !Number.isFinite(sample?.pulse) ? 'pulse' : null,
+      !Number.isFinite(sample?.breath) ? 'breathing' : null,
+    ].filter(Boolean);
+    const message = missing.length
+      ? `Waiting for reliable ${missing.join(' and ')} readings. Actions remain paused.`
+      : 'Pulse or breathing confidence is below the SDK reliability threshold. Actions remain paused.';
+    $('status').textContent = 'Waiting for both reliable signals';
+    $('explanation').textContent = message;
+    $('cameraHint').textContent = message;
+  } else if (qualityOk) {
+    timedOut = false;
+    setQuality('good', sourceName === 'sim' ? 'Simulated signals ready' : 'Both signals reliable');
+    $('cameraHint').textContent = sourceName === 'sim'
+      ? 'Developer simulator is active. No camera or SmartSpectra API is in use.'
+      : 'Both live signals are reliable. Keep comfortably still.';
+  }
+  updateActionAvailability();
 }
 
 function drawRecap(summary) {
@@ -333,7 +400,9 @@ function frameToRgba(frame) {
         out[dst] = bytes[src + (bgr ? 2 : 0)];
         out[dst + 1] = bytes[src + 1];
         out[dst + 2] = bytes[src + (bgr ? 0 : 2)];
-        out[dst + 3] = channels === 4 ? bytes[src + 3] : 255;
+        // Processed camera frames are displayed as opaque. Some SDK RGBA/BGRA
+        // previews carry an unused zero alpha channel.
+        out[dst + 3] = 255;
       }
     }
     return { width, height, pixels: out };
@@ -400,9 +469,16 @@ function resetVisualState() {
   delete document.body.dataset.sdkMetricsPacketCount;
   delete document.body.dataset.sdkMetricsPulsePresent;
   delete document.body.dataset.sdkMetricsBreathPresent;
+  delete document.body.dataset.sdkMetricsPulseReliable;
+  delete document.body.dataset.sdkMetricsBreathReliable;
+  delete document.body.dataset.sdkPulseConfidence;
+  delete document.body.dataset.sdkBreathConfidence;
+  delete document.body.dataset.sdkPulseConfidenceMax;
+  delete document.body.dataset.sdkBreathConfidenceMax;
   delete document.body.dataset.previewFrameReceived;
   delete document.body.dataset.previewError;
-  qualityOk = false; timedOut = false; lastSampleAt = 0; currentSample = null; currentSnapshot = null;
+  qualityOk = false; metricsReliable = false; timedOut = false; lastSampleAt = 0; currentSample = null; currentSnapshot = null;
+  cameraQualityMessage = 'Waiting for SmartSpectra camera validation.';
   lastAnnouncedState = null;
   engine.reset();
   $('pulseNow').textContent = '—'; $('breathNow').textContent = '—';
@@ -417,6 +493,32 @@ function resetVisualState() {
   renderSnapshot(engine.snapshot(Date.now()));
 }
 
+function applyConfig(config) {
+  appConfig = config;
+  sourceName = config.source;
+  const live = sourceName !== 'sim';
+  $('sourcePill').textContent = live
+    ? `Live SmartSpectra · ${config.hasApiKey ? 'ready' : 'API key needed'}`
+    : 'Developer simulator · Simulated';
+  $('sourcePill').className = live ? 'pill live' : 'pill';
+  $('privacyPill').innerHTML = `<span class="dot"></span>${config.telemetry ? 'Telemetry on' : 'Telemetry off'}`;
+  $('privacyPill').className = config.telemetry ? 'pill' : 'pill safe';
+  $('telemetryNote').textContent = config.telemetry ? 'SDK telemetry is on for this session.' : 'SDK telemetry is off.';
+  $('start').innerHTML = live
+    ? 'Start live camera session <span>→</span>'
+    : 'Begin simulated developer session <span>→</span>';
+}
+
+async function initializeConfig() {
+  try {
+    applyConfig(await window.dolowcool.config());
+  } catch (error) {
+    $('sourcePill').textContent = 'SmartSpectra configuration unavailable';
+    $('sourcePill').className = 'pill';
+    $('startErr').textContent = String(error.message || error);
+  }
+}
+
 $('agree').onchange = () => { $('start').disabled = !$('agree').checked; };
 
 $('start').onclick = async () => {
@@ -424,26 +526,27 @@ $('start').onclick = async () => {
   $('start').disabled = true;
   resetVisualState();
   try {
-    const config = await window.dolowcool.config();
-    sourceName = config.source;
+    const config = appConfig || await window.dolowcool.config();
+    applyConfig(config);
     active = true;
     sessionRecap.reset(Date.now());
-    $('sourcePill').textContent = sourceName === 'sim' ? 'Simulator · Simulated' : 'Live SmartSpectra';
-    $('privacyPill').innerHTML = `<span class="dot"></span>${config.telemetry ? 'Telemetry on' : 'Telemetry off'}`;
-    $('privacyPill').className = config.telemetry ? 'pill' : 'pill safe';
-    $('telemetryNote').textContent = config.telemetry ? 'SDK telemetry is on for this session.' : 'SDK telemetry is off.';
+    $('sourcePill').textContent = sourceName === 'sim' ? 'Developer simulator · Simulated' : 'Live SmartSpectra · camera active';
     $('consent').classList.add('hidden');
     $('app').classList.remove('hidden');
 
     if (sourceName === 'sim') {
       $('simBox').classList.remove('hidden');
       $('simVisual').classList.remove('hidden');
+      $('liveScanBadge').classList.add('hidden');
+      $('scanLine').classList.add('hidden');
       q('.face-guide')?.classList.add('hidden');
       $('cameraHint').textContent = 'Use the slider after calibration to demonstrate the lock.';
       await window.dolowcool.start();
     } else {
       $('simBox').classList.add('hidden');
       $('simVisual').classList.add('hidden');
+      $('liveScanBadge').classList.remove('hidden');
+      $('scanLine').classList.remove('hidden');
       q('.face-guide')?.classList.remove('hidden');
       await window.dolowcool.start();
     }
@@ -457,7 +560,7 @@ $('start').onclick = async () => {
     $('app').classList.add('hidden');
     $('consent').classList.remove('hidden');
     $('startErr').textContent = String(error.message || error).replace(/^Error invoking remote method.*?Error: /, '');
-    $('start').disabled = false;
+    $('start').disabled = !$('agree').checked;
   }
 };
 
@@ -599,8 +702,12 @@ $('charCount').textContent = `${$('msg').value.length} / 8000`;
 
 setInterval(() => {
   if (active && qualityOk && lastSampleAt && Date.now() - lastSampleAt > 6000 && !timedOut) {
+    metricsReliable = false;
+    const snapshot = engine.interrupt(Date.now(), 'Readings paused. Building a fresh continuous baseline…');
+    renderSnapshot(snapshot);
     showSignalProblem('Readings paused. Actions stay locked until a continuous signal returns.');
   }
 }, 1000);
 
 resetVisualState();
+initializeConfig();

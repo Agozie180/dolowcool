@@ -12,6 +12,11 @@ module.exports = function createSimSource() {
       t: Date.now(),
       pulse: 70 + arousal * 35 + jitter(1.5),
       breath: 14 + arousal * 14 + jitter(0.6),
+      pulseConfidence: 100,
+      breathConfidence: 100,
+      pulseStable: true,
+      breathStable: true,
+      simulated: true,
     }), 1000);
   };
   em.stop = async () => { clearInterval(timer); timer = null; };
