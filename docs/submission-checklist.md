@@ -20,7 +20,7 @@
 
 **Verified constraints:**
 
-- supported runtime is Node 20+ on the SmartSpectra-published platform matrix;
+- SmartSpectra's platform matrix is compatible with the project targets, while the pinned Electron toolchain makes Node 22.12+ the effective app requirement;
 - live use needs an API key, network authentication/subscription validation, and a suitable camera view;
 - pulse and breathing can arrive separately and have different acquisition timing;
 - the tested camera does not provide reliable AE lock or gain controls;

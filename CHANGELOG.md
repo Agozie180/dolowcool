@@ -11,6 +11,7 @@ All notable Dolowcool changes are recorded here. The project uses semantic versi
 - Consent-first composer, explanation panel, deliberate override, memory-only recap, email handoff, and deterministic simulator.
 - Unit, coverage, Electron smoke, Presage configuration, email handoff, live transport, and strict live acceptance tests.
 - Judge-facing README, consent analysis, live report, self-audit, demo script, DEV draft, and CI.
+- Node 22.12+ runtime constraint matching the pinned Electron toolchain.
 
 ### Fixed
 

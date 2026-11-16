@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/dolowcool/actions/workflows/ci.yml)
 ![Measured unit line coverage 73.79%](https://img.shields.io/badge/unit%20line%20coverage-73.79%25-2E8B57)
-![Node 20+](https://img.shields.io/badge/Node-20%2B-339933)
+![Node 22.12+](https://img.shields.io/badge/Node-22.12%2B-339933)
 ![SmartSpectra 3.5.0](https://img.shields.io/badge/SmartSpectra-3.5.0-6C5CE7)
 ![License MIT](https://img.shields.io/badge/license-MIT-blue)
 
@@ -107,7 +107,7 @@ SmartSpectra can emit pulse and breathing in separate packets. Dolowcool retains
 
 Requirements:
 
-- Node.js 20 or newer
+- Node.js 22.12 or newer (required by the pinned Electron toolchain)
 - Windows x64, macOS Apple Silicon, or Linux x64/ARM64; Linux needs glibc 2.35+
 - A SmartSpectra API key
 - A camera view containing the face, shoulders, and upper chest with soft front lighting
